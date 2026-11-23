@@ -65,22 +65,24 @@ public:
 
         if (driveKnob)
         {
-            juce::String character = "Clean Bypass";
-            if (v > 0.05)
-                character = "Tube / Tape (Even Harmonics)";
-            else if (v < -0.05)
-                character = "Transistor / Console (Odd Harmonics)";
+            juce::String character = "Jaycen Joshua 8x Default (+1.0)";
+            if (v > 1.05)
+                character = "Mas saturacion armonica H2..H16 en las 8 consolas";
+            else if (v < 0.95)
+                character = "Menos saturacion (hacia transformador limpio)";
 
-            return name + ": " + valStr + " [" + character + "] (Click derecho: Skin y Oversampling)";
+            return name + " (Saturacion 8x NLS): " + valStr
+                 + " [" + character + "] — Doble clic: +1.0 | Clic derecho: Skins";
         }
 
-        juce::String tiltInfo = "Flat Pivot";
+        juce::String subInfo = "1:1 Jaycen Joshua (+6.2 dB @ 27 Hz, L=R 0.00 dB)";
         if (v > 0.05)
-            tiltInfo = "Bright Pre-Emphasis";
+            subInfo = "Mas golpe Subgrave 27 Hz de transformador (hasta +9.3 dB)";
         else if (v < -0.05)
-            tiltInfo = "Warm Pre-Emphasis";
+            subInfo = "Recorte del Subgrave 27 Hz (hacia respuesta plana)";
 
-        return name + ": " + valStr + " [" + tiltInfo + "] (Click derecho: Skin y Oversampling)";
+        return name + " (Golpe Subgrave 27 Hz L=R): " + valStr
+             + " [" + subInfo + "] — Doble clic: 0.0 | Clic derecho: Skins";
     }
 
 private:
@@ -109,7 +111,7 @@ public:
     FLModePillButton()
     {
         setClickingTogglesState (true);
-        setTooltip ("IND: Individual Track | LNK: Global Linked Console Bus (Click derecho: Skin y Oversampling)");
+        setTooltip ("AutoGain Estereo (LNK / Luz Verde = ON | IND = OFF): Iguala el volumen RMS de salida al de entrada tras las 8 consolas manteniendo L=R clavado a 0.00 dB (Clic derecho: Skins)");
     }
 
     std::function<void()> onRightClickMenu;
@@ -319,7 +321,7 @@ public:
     FLBypassSwitchButton()
     {
         setClickingTogglesState (true);
-        setTooltip ("OMITIR / BYPASS: Activar o desactivar HEAT (Click derecho: Skin y Oversampling)");
+        setTooltip ("ACTIVE / OMITIR (Bypass): Activa o desactiva la cadena de 8 consolas Summing Console de Jaycen Joshua (Clic derecho: Skins)");
     }
 
     std::function<void()> onRightClickMenu;

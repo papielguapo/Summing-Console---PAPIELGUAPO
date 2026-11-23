@@ -85,7 +85,7 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     const int curOS   = audioProcessor.getOversamplingMode();
     const bool isLnk  = audioProcessor.isLinkedMode();
 
-    menu.addSectionHeader ("FL HEAT - SKIN / THEME");
+    menu.addSectionHeader ("SUMMING CONSOLE - SKIN / THEME");
     menu.addItem (1, "1. FL Studio (Dark Mixer UI)",        true, curSkin == flheat::kSkinFLStudio);
     menu.addItem (2, "2. Pro Tools HEAT 1:1 (Original)",    true, curSkin == flheat::kSkinProTools);
     menu.addItem (3, "3. Atari ST / Retro PC (GEM CRT)",    true, curSkin == flheat::kSkinAtariPC);
@@ -94,16 +94,9 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (6, "6. Steinberg Cubase 14 (MixConsole)", true, curSkin == flheat::kSkinCubase);
 
     menu.addSeparator();
-    menu.addSectionHeader ("OVERSAMPLING (ENGINE QUALITY)");
-    menu.addItem (10, "1x Native (0 Latency - Pro Tools Bit-Exact)", true, curOS == 0);
-    menu.addItem (11, "2x Oversampling (Low Latency IIR)",           true, curOS == 1);
-    menu.addItem (12, "4x Oversampling (Default Studio HQ)",         true, curOS == 2);
-    menu.addItem (13, "8x Oversampling (Ultra Mastering)",           true, curOS == 3);
-
-    menu.addSeparator();
-    menu.addSectionHeader ("CONSOLE LINK (FL STUDIO / ABLETON)");
-    menu.addItem (20, "LNK: Master Linked Console (All Tracks)", true,  isLnk);
-    menu.addItem (21, "IND: Individual Track Controls",          true, !isLnk);
+    menu.addSectionHeader ("AUTOGAIN RMS ESTEREO (0.00 dB L=R)");
+    menu.addItem (20, "LNK / ON: AutoGain Activo (Compensa volumen de las 8 consolas)", true,  isLnk);
+    menu.addItem (21, "IND / OFF: Ganancia Bruta Original (Sin AutoGain)",              true, !isLnk);
 
     menu.addSeparator();
     menu.addSectionHeader ("UI SIZE (FL STUDIO SAFE)");
