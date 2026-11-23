@@ -8,8 +8,6 @@
 
 Haz **clic derecho** en cualquier parte del plugin para cambiar al instante entre las **2 skins** (la elección y el tamaño se guardan con tu proyecto/sesión):
 
-![Comparativa Skin FL Studio vs Pro Tools HEAT 1:1](Screenshots/fl_vs_pt_skins.png)
-
 | **Skin 1: FL Studio (Dark Mixer UI)** | **Skin 2: Pro Tools HEAT 1:1 (Original)** |
 | :---: | :---: |
 | ![Skin FL Studio](Screenshots/skin_fl_studio.png) | ![Skin Pro Tools HEAT 1:1](Screenshots/skin_pro_tools.png) |
