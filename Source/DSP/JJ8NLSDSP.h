@@ -219,14 +219,17 @@ namespace jj8nls
             updateAllStageFilters();
         }
 
-        // Console Variant selector (0..3):
+        // Console Variant selector (0..4):
         //   0 = Jaycen Joshua 8x (5x Mike + 2x Spike + 1x Nevo)
         //   1 = All SSL Spike 8x (8x SSL 4000G — Cleanest / Flattest Sub / Open 17.5 kHz Top)
         //   2 = All Neve Nevo 8x (8x Neve 5116 — Warm Even Harmonics / Silky 15 kHz Top)
         //   3 = All EMI Mike 8x  (8x EMI TG12345 — Maximum +8.96 dB 27 Hz Sub & Punch)
+        //   4 = FL HEAT Hybrid 8x (4x SSL Spike + 4x Neve Nevo — 1:1 FL HEAT / Crane Song Ocelot Bipolar Character:
+        //       Drive > 0 = Triode/Tape Even Harmonics, Drive < 0 = Solid-State/Console Odd Harmonics + Tight Punch,
+        //       Tone = Pre/Post-Emphasis Tilt & Sub/Air Balance)
         void setConsoleVariant (int variantIndex) noexcept
         {
-            const int clamped = std::clamp (variantIndex, 0, 3);
+            const int clamped = std::clamp (variantIndex, 0, 4);
             if (currentConsoleVariant == clamped)
                 return;
 
@@ -247,6 +250,23 @@ namespace jj8nls
                 for (int i = 0; i < kNumSlots; ++i)
                     slots[static_cast<size_t> (i)].model = kJJModels[i];
             }
+            else if (clamped == 4)
+            {
+                // FL HEAT Hybrid 8x: Alternates SSL Spike (Console/Solid-State Odd) and Neve Nevo (Triode/Transformer Even)
+                static constexpr ConsoleModel kFLHeatModels[kNumSlots] =
+                {
+                    ConsoleModel::Spike,
+                    ConsoleModel::Nevo,
+                    ConsoleModel::Spike,
+                    ConsoleModel::Nevo,
+                    ConsoleModel::Spike,
+                    ConsoleModel::Nevo,
+                    ConsoleModel::Spike,
+                    ConsoleModel::Nevo
+                };
+                for (int i = 0; i < kNumSlots; ++i)
+                    slots[static_cast<size_t> (i)].model = kFLHeatModels[i];
+            }
             else
             {
                 const ConsoleModel targetModel = (clamped == 1) ? ConsoleModel::Spike
@@ -256,6 +276,8 @@ namespace jj8nls
                     slots[static_cast<size_t> (i)].model = targetModel;
             }
 
+            setBipolarDrive (lastRawDrive);
+            setBipolarTone  (lastRawTone);
             updateAllStageFilters();
         }
 
@@ -327,11 +349,32 @@ namespace jj8nls
         void setBipolarTone (double rawTone) noexcept
         {
             const double clamped = std::clamp (rawTone, -10.0, 10.0);
-            const double newSubScale = (clamped >= 0.0)
-                                         ? (1.0 + (clamped / 10.0) * 0.5)
-                                         : std::max (0.0, 1.0 + (clamped / 10.0));
-            // Per-stage high-shelf offset in dB: 0.0 dB at Tone <= 0, up to +0.57 dB/stage (+4.56 dB total across 8 stages) at Tone = +10
-            const double newAirOffsetDb = (clamped > 0.0) ? ((clamped / 10.0) * 0.57) : 0.0;
+            lastRawTone = clamped;
+
+            double newSubScale = 1.0;
+            double newAirOffsetDb = 0.0;
+
+            if (currentConsoleVariant == 4)
+            {
+                // FL HEAT Mode (Ocelot / Dave Hill style bipolar Tone):
+                // Tone = 0.0: Controlled tight sub (0.45x = +2.0 dB @ 27 Hz) and neutral high-end (-0.8 dB @ 16 kHz)
+                // Tone > 0.0: Bright Pre/Post-Emphasis (+0.85 dB/stage -> up to +4.2 dB silky air at 16 kHz) + moderate sub
+                // Tone < 0.0: Warm Tape/Tube roll-off (-0.45 dB/stage darker top) + fuller warm bottom (up to 0.85x @ 27 Hz)
+                newSubScale = (clamped >= 0.0)
+                                ? (0.45 + (clamped / 10.0) * 0.25)
+                                : (0.45 + (-clamped / 10.0) * 0.40);
+                newAirOffsetDb = (clamped >= 0.0)
+                                   ? (0.22 + (clamped / 10.0) * 0.63)
+                                   : (0.22 + (clamped / 10.0) * 0.45);
+            }
+            else
+            {
+                newSubScale = (clamped >= 0.0)
+                                ? (1.0 + (clamped / 10.0) * 0.5)
+                                : std::max (0.0, 1.0 + (clamped / 10.0));
+                // Per-stage high-shelf offset in dB: 0.0 dB at Tone <= 0, up to +0.57 dB/stage (+4.56 dB total across 8 stages) at Tone = +10
+                newAirOffsetDb = (clamped > 0.0) ? ((clamped / 10.0) * 0.57) : 0.0;
+            }
 
             if (std::abs (subBumpScale - newSubScale) > 1.0e-4
              || std::abs (airShelfOffsetDb - newAirOffsetDb) > 1.0e-4)
@@ -374,6 +417,36 @@ namespace jj8nls
         void setBipolarDrive (double rawDrive) noexcept
         {
             const double clamped = std::clamp (rawDrive, -10.0, 10.0);
+            lastRawDrive = clamped;
+
+            if (currentConsoleVariant == 4)
+            {
+                // Mode 5: FL HEAT Hybrid 8x (Dave Hill / Crane Song Ocelot Bipolar Law):
+                //   Drive > 0 (0.0 .. +10.0): Bank 1 Triode / Tape Asymmetric Even-Harmonic Dominance (H2/H4/H6 boosted up to 2.4x)
+                //   Drive < 0 (0.0 .. -10.0): Bank 0 Solid-State / Console Odd-Harmonic Dominance (H3/H5/H7 boosted up to 2.5x + transient punch)
+                //   Drive == 0.0: Ultra-clean console transformer pass-through
+                const double absNorm = std::clamp (std::abs (clamped) / 10.0, 0.0, 1.0);
+                slots[0].drive = absNorm * 12.0;
+                globalHarmonicScale = 0.25 + 1.35 * std::sqrt (absNorm);
+
+                if (clamped >= 0.0)
+                {
+                    dynamicEvenBias = 1.0 + 1.40 * absNorm; // Strong Triode/Tape Even-Order (H2, H4, H6)
+                    dynamicOddBias  = std::max (0.35, 1.0 - 0.55 * absNorm);
+                    transientExpansionAmount = 0.0;
+                }
+                else
+                {
+                    dynamicEvenBias = std::max (0.25, 1.0 - 0.70 * absNorm);
+                    dynamicOddBias  = 1.0 + 1.55 * absNorm; // Strong Solid-State/Console Odd-Order (H3, H5, H7)
+                    transientExpansionAmount = 0.65 * absNorm; // Solid-state transient definition
+                }
+                return;
+            }
+
+            dynamicEvenBias = 1.0;
+            dynamicOddBias  = 1.0;
+
             if (clamped >= 1.0)
             {
                 slots[0].drive = std::clamp (clamped * 1.2, 0.0, 12.0);
@@ -615,6 +688,7 @@ namespace jj8nls
                 case 1:  return 1.0471285481; // All Spike 8x (+0.40 dB makeup for 8 x -0.05 dB)
                 case 2:  return 1.0964781961; // All Nevo 8x  (+0.80 dB makeup for 8 x -0.10 dB)
                 case 3:  return 1.1168632478; // All Mike 8x  (+0.96 dB makeup for 8 x -0.12 dB)
+                case 4:  return 1.0715193052; // FL HEAT Hybrid 8x (4x Spike + 4x Nevo -> +0.60 dB makeup)
                 default: return 1.0901844924; // Jaycen Joshua 8x (+0.75 dB makeup)
             }
         }
@@ -784,7 +858,8 @@ namespace jj8nls
                 tPrev2 = tPrev1;
                 tPrev1 = tk;
 
-                const double parityBias = ((k & 1) == 0) ? evenBias : oddBias;
+                const double parityBias = ((k & 1) == 0) ? (evenBias * dynamicEvenBias)
+                                                         : (oddBias  * dynamicOddBias);
                 harmSum += kBaseWeights[k - 2] * parityBias * (tk - kTkZero[k - 2]);
             }
 
@@ -901,9 +976,13 @@ namespace jj8nls
 
         StereoBalanceMode balanceMode = StereoBalanceMode::SubAndMidLocked;
         int currentConsoleVariant = 0;
+        double lastRawDrive      = 1.0;
+        double lastRawTone       = 0.0;
         double subBumpScale      = 1.0;
         double airShelfOffsetDb  = 0.0;
         double globalHarmonicScale = 1.0;
+        double dynamicEvenBias   = 1.0;
+        double dynamicOddBias    = 1.0;
         double transientExpansionAmount = 0.0;
         bool masterNoiseEnabled  = true;
         bool autoPeakRmsBalance  = true;

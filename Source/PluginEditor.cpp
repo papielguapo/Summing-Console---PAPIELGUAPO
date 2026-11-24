@@ -101,6 +101,7 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (41, "2. All SSL Spike 8x (Cleanest Sub / Open 17.5 kHz / Master & Vocals)", true, curVar == 1);
     menu.addItem (42, "3. All Neve Nevo 8x (Warm Even Harmonics / Silky 15 kHz / Vocals & Synths)", true, curVar == 2);
     menu.addItem (43, "4. All EMI Mike 8x (Max +8.96 dB 27 Hz Sub Cannon / Heavy Drums & 808s)", true, curVar == 3);
+    menu.addItem (44, "5. FL HEAT Hybrid 8x (4x SSL + 4x Neve: +Drive Triode Pares / -Drive Console Impares)", true, curVar == 4);
 
     menu.addSeparator();
     menu.addSectionHeader ("OVERSAMPLING (CHEBYSHEV H2..H16 ANTI-ALIASING)");
@@ -152,7 +153,7 @@ void FLHeatAudioProcessorEditor::showContextMenu()
                 p->setValueNotifyingHost (result == 20 ? 1.0f : 0.0f);
             safeThis->repaint();
         }
-        else if (result >= 40 && result <= 43)
+        else if (result >= 40 && result <= 44)
         {
             proc.setConsoleVariant (result - 40);
             safeThis->repaint();

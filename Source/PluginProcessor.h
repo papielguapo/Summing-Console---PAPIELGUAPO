@@ -58,7 +58,7 @@ public:
     void setOversamplingMode (int newOS) noexcept { oversamplingMode.store (juce::jlimit (0, 3, newOS), std::memory_order_relaxed); }
 
     int getConsoleVariant() const noexcept { return consoleVariant.load (std::memory_order_relaxed); }
-    void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 3, newVar), std::memory_order_relaxed); }
+    void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 4, newVar), std::memory_order_relaxed); }
 
     bool getAnalogNoiseEnabled() const noexcept { return analogNoiseEnabled.load (std::memory_order_relaxed); }
     void setAnalogNoiseEnabled (bool en) noexcept { analogNoiseEnabled.store (en, std::memory_order_relaxed); }

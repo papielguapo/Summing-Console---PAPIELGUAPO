@@ -29,16 +29,20 @@ Haz **clic derecho** en cualquier parte del plugin para cambiar al instante entr
 
 ---
 
-## 🎛️ Linear & Harmonic Analysis de lo Implementado: 4 Variantes de Consola 8x + Tone Bipolar + Drive Híbrido
+## 🎛️ Linear & Harmonic Analysis de lo Implementado: 5 Variantes de Consola 8x (incl. FL HEAT Hybrid) + Tone Bipolar + Drive Híbrido
 
-### 1. Comparativa Linear & Harmonic Analysis: Las 4 Variantes de 8 Consolas en Serie (`0.00 dB L=R`)
+### 1. Comparativa Linear & Harmonic Analysis: Las 5 Variantes de 8 Consolas en Serie (`0.00 dB L=R`)
 
-Desde el menú contextual (clic derecho) puedes alternar entre **4 configuraciones completas de 8 consolas en serie**, todas calibradas a **0.00 dB L=R @ 1 kHz**:
+Desde el menú contextual (clic derecho) puedes alternar entre **5 configuraciones completas de 8 consolas en serie**, todas calibradas a **0.00 dB L=R @ 1 kHz**:
 
 - **1. Jaycen Joshua 8x (Default):** `5× EMI TG12345 (Mike) + 2× SSL 4000G (Spike) + 1× Neve 5116 (Nevo)` — **+6.9 dB @ 27 Hz**, **-2.6 dB @ 16 kHz**, **THD = -34.3 dB** (balance híbrido par/impar ideal para Drum Bus, 808 y Subgrupos).
 - **2. All SSL Spike 8x:** `8× SSL 4000G` — **+1.9 dB @ 26.5 Hz**, **-1.5 dB @ 17.5 kHz**, **THD = -36.2 dB** (el modo más limpio, abierto y rápido en transientes; ideal para **Vocal Bus** y **Mix Bus / Master**).
 - **3. All Neve Nevo 8x:** `8× Neve 5116` — **+6.8 dB @ 27.5 Hz**, **-3.5 dB @ 15 kHz**, **THD = -33.2 dB** con fuerte dominancia de **armónicos pares (`H2 = -47.9 dB`, `H4 = -57.9 dB`)** que aportan grosor cremoso de transformador Marinair y doman agudos ásperos.
 - **4. All EMI Mike 8x:** `8× EMI TG12345` — **+9.0 dB @ 27 Hz**, **-2.9 dB @ 16 kHz**, **THD = -33.6 dB** (saturación densa par+impar estilo Abbey Road con máximo peso sub-grave para **808s, Synth Bass y Drums agresivos**).
+- **5. FL HEAT Hybrid 8x (`4× SSL Spike + 4× Neve Nevo`):** Alterna 4 etapas SSL y 4 etapas Neve para replicar el comportamiento bipolar exacto de **FL HEAT / Crane Song Ocelot**:
+  - **Drive Positivo (`0` a `+10` — *Triode / Tape*):** dispara la dominancia de **armónicos pares (`H2`, `H4`, `H6` hasta `2.4x`)** para calor valvular y de cinta.
+  - **Drive Negativo (`0` a `-10` — *Console / Solid-State*):** invierte la polaridad armónica hacia **armónicos impares (`H3`, `H5`, `H7` hasta `2.5x`)** + definición extra de transientes.
+  - **Tone Bipolar Pre/Post-Emphasis:** en `0.0` mantiene un sub contenido (`+2.0 dB @ 27 Hz`, `-0.8 dB @ 16 kHz`); hacia `+10` abre hasta **`+4.2 dB @ 16 kHz`** y hacia `-10` redondea agudos con cuerpo cálido analógico.
 
 ![4x Console Variants Linear & Harmonic Analysis](Screenshots/console_variants_analysis.png)
 
@@ -86,7 +90,7 @@ Desde el menú contextual (clic derecho) puedes alternar entre **4 configuracion
 | **TONE (`Tono`)** | `-10.0` a `+10.0` | **`0.0`** | **Opción B Bipolar:** en `0.0` mantiene la curva 1:1 (`+6.9 dB @ 27 Hz`, `-2.6 dB @ 16 kHz`); hacia `+10` (*Full Phat & Air*) sube el sub de `27 Hz` hasta `+9.5 dB` y abre el *High-Shelf* de `16 kHz` hasta `+1.9 dB`; hacia `-10` (*Tight Sub*) aplana el sub de `27 Hz` a `0.0 dB`. |
 | **AG / RAW (`[⏻]`)** | `ON` / `OFF` | **`ON` (`AG`)** | Activa o desactiva la compensación automática de ganancia RMS estéreo. |
 | **ACTIVE / BYPASS (`OMITIR`)** | `Active` / `Bypass` | **`Active`** | Bypass suave libre de clics. |
-| **Menú Contextual** | *Clic Derecho* | — | Permite elegir entre las **6 Skins**, las **4 Variantes de Consola 8x** (*Jaycen Joshua 8x*, *All SSL Spike 8x*, *All Neve Nevo 8x*, *All EMI Mike 8x*), **Oversampling Real** (`1x`, `2x`, `4x`, `8x`), **Analog Noise Floor** (`ON` / `OFF`), **AutoGain** y **5 tamaños de interfaz** (`70%` a `140%`). |
+| **Menú Contextual** | *Clic Derecho* | — | Permite elegir entre las **6 Skins**, las **5 Variantes de Consola 8x** (*Jaycen Joshua 8x*, *All SSL Spike 8x*, *All Neve Nevo 8x*, *All EMI Mike 8x*, *FL HEAT Hybrid 8x*), **Oversampling Real** (`1x`, `2x`, `4x`, `8x`), **Analog Noise Floor** (`ON` / `OFF`), **AutoGain** y **4 tamaños de interfaz**. |
 
 ---
 
