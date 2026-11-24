@@ -81,9 +81,11 @@ void FLHeatAudioProcessorEditor::showContextMenu()
 {
     juce::PopupMenu menu;
 
-    const int curSkin = audioProcessor.getSkinIndex();
-    const int curOS   = audioProcessor.getOversamplingMode();
-    const bool isLnk  = audioProcessor.isLinkedMode();
+    const int curSkin  = audioProcessor.getSkinIndex();
+    const int curOS    = audioProcessor.getOversamplingMode();
+    const int curVar   = audioProcessor.getConsoleVariant();
+    const bool isNoise = audioProcessor.getAnalogNoiseEnabled();
+    const bool isLnk   = audioProcessor.isLinkedMode();
 
     menu.addSectionHeader ("SUMMING CONSOLE - SKIN / THEME");
     menu.addItem (1, "1. FL Studio (Dark Mixer UI)",        true, curSkin == flheat::kSkinFLStudio);
@@ -92,6 +94,25 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (4, "4. Ableton Live 12 (Rack Device)",    true, curSkin == flheat::kSkinAbletonLive);
     menu.addItem (5, "5. Apple Logic Pro X (Space Grey)",   true, curSkin == flheat::kSkinLogicProX);
     menu.addItem (6, "6. Steinberg Cubase 14 (MixConsole)", true, curSkin == flheat::kSkinCubase);
+
+    menu.addSeparator();
+    menu.addSectionHeader ("8x CONSOLE CHAIN VARIANT (0.00 dB L=R)");
+    menu.addItem (40, "1. Jaycen Joshua 8x (Default: 5x EMI + 2x SSL + 1x Neve)", true, curVar == 0);
+    menu.addItem (41, "2. All SSL Spike 8x (Cleanest Sub / Open 17.5 kHz / Master & Vocals)", true, curVar == 1);
+    menu.addItem (42, "3. All Neve Nevo 8x (Warm Even Harmonics / Silky 15 kHz / Vocals & Synths)", true, curVar == 2);
+    menu.addItem (43, "4. All EMI Mike 8x (Max +8.96 dB 27 Hz Sub Cannon / Heavy Drums & 808s)", true, curVar == 3);
+
+    menu.addSeparator();
+    menu.addSectionHeader ("OVERSAMPLING (CHEBYSHEV H2..H16 ANTI-ALIASING)");
+    menu.addItem (10, "1x (Zero Latency / Tracking)",    true, curOS == 0);
+    menu.addItem (11, "2x (Low CPU)",                    true, curOS == 1);
+    menu.addItem (12, "4x (Default / High Quality)",     true, curOS == 2);
+    menu.addItem (13, "8x (Ultra / Mastering)",          true, curOS == 3);
+
+    menu.addSeparator();
+    menu.addSectionHeader ("ANALOG CONSOLE NOISE FLOOR (1/f PINK + 50 Hz HUM)");
+    menu.addItem (50, "Noise Floor: ON (Authentic -110 dBFS Analog Floor)", true,  isNoise);
+    menu.addItem (51, "Noise Floor: OFF (100% Silent Digital Black)",       true, !isNoise);
 
     menu.addSeparator();
     menu.addSectionHeader ("AUTOGAIN RMS ESTEREO (0.00 dB L=R)");
@@ -129,6 +150,16 @@ void FLHeatAudioProcessorEditor::showContextMenu()
         {
             if (auto* p = proc.getAPVTS().getParameter (FLHeatAudioProcessor::kParamLink))
                 p->setValueNotifyingHost (result == 20 ? 1.0f : 0.0f);
+            safeThis->repaint();
+        }
+        else if (result >= 40 && result <= 43)
+        {
+            proc.setConsoleVariant (result - 40);
+            safeThis->repaint();
+        }
+        else if (result == 50 || result == 51)
+        {
+            proc.setAnalogNoiseEnabled (result == 50);
             safeThis->repaint();
         }
         else if (result >= 30 && result <= 33)

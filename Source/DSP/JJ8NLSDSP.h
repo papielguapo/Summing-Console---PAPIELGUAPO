@@ -215,8 +215,51 @@ namespace jj8nls
                 slots[static_cast<size_t> (i)].enabled = true;
             }
 
+            currentConsoleVariant = 0;
             updateAllStageFilters();
         }
+
+        // Console Variant selector (0..3):
+        //   0 = Jaycen Joshua 8x (5x Mike + 2x Spike + 1x Nevo)
+        //   1 = All SSL Spike 8x (8x SSL 4000G — Cleanest / Flattest Sub / Open 17.5 kHz Top)
+        //   2 = All Neve Nevo 8x (8x Neve 5116 — Warm Even Harmonics / Silky 15 kHz Top)
+        //   3 = All EMI Mike 8x  (8x EMI TG12345 — Maximum +8.96 dB 27 Hz Sub & Punch)
+        void setConsoleVariant (int variantIndex) noexcept
+        {
+            const int clamped = std::clamp (variantIndex, 0, 3);
+            if (currentConsoleVariant == clamped)
+                return;
+
+            currentConsoleVariant = clamped;
+            if (clamped == 0)
+            {
+                static constexpr ConsoleModel kJJModels[kNumSlots] =
+                {
+                    ConsoleModel::Mike,
+                    ConsoleModel::Spike,
+                    ConsoleModel::Mike,
+                    ConsoleModel::Mike,
+                    ConsoleModel::Mike,
+                    ConsoleModel::Spike,
+                    ConsoleModel::Nevo,
+                    ConsoleModel::Mike
+                };
+                for (int i = 0; i < kNumSlots; ++i)
+                    slots[static_cast<size_t> (i)].model = kJJModels[i];
+            }
+            else
+            {
+                const ConsoleModel targetModel = (clamped == 1) ? ConsoleModel::Spike
+                                               : (clamped == 2) ? ConsoleModel::Nevo
+                                                                : ConsoleModel::Mike;
+                for (int i = 0; i < kNumSlots; ++i)
+                    slots[static_cast<size_t> (i)].model = targetModel;
+            }
+
+            updateAllStageFilters();
+        }
+
+        int getConsoleVariant() const noexcept { return currentConsoleVariant; }
 
         void prepare (double newSampleRate) noexcept
         {
@@ -226,6 +269,9 @@ namespace jj8nls
             peakReleaseCoeff = 1.0 - std::exp (-1.0 / (0.500 * sampleRate)); // 500ms smooth ceiling release
             autoGainRmsCoeff = 1.0 - std::exp (-1.0 / (0.120 * sampleRate)); // 120ms stereo-linked AutoGain RMS
             autoGainSmoothCoeff = 1.0 - std::exp (-1.0 / (0.045 * sampleRate)); // 45ms smooth AutoGain gain slewing
+            transFastAttackCoeff = 1.0 - std::exp (-1.0 / (0.0015 * sampleRate)); // 1.5ms fast transient attack
+            transFastReleaseCoeff = 1.0 - std::exp (-1.0 / (0.035 * sampleRate)); // 35ms fast transient release
+            transSlowCoeff = 1.0 - std::exp (-1.0 / (0.090 * sampleRate)); // 90ms slow body tracker
             reset();
             updateAllStageFilters();
         }
@@ -245,6 +291,8 @@ namespace jj8nls
             inRmsEnv    = 1.0e-8;
             outRmsEnv   = 1.0e-8;
             autoGainLinear = 1.0;
+            transFastEnv = 1.0e-6;
+            transSlowEnv = 1.0e-6;
         }
 
         void setStereoBalanceMode (StereoBalanceMode m) noexcept
@@ -271,6 +319,29 @@ namespace jj8nls
 
         double getSubBumpScale() const noexcept { return subBumpScale; }
 
+        // Bipolar Tone [-10.0 .. +10.0] (Option B):
+        //   0.0          = 100% 1:1 Jaycen Joshua (+6.2 dB @ 27 Hz, original -2.75 dB @ 16 kHz analog roll-off)
+        //   0.0 .. +10.0 = Full Phat & Air: Boosts 27 Hz transformer sub up to 1.5x (+9.3 dB) AND opens 16 kHz high-shelf
+        //                  (compensating analog roll-off up to +1.8 dB silky air at +10.0 so kicks/808s gain sub without losing top)
+        //   0.0 .. -10.0 = Tight / Controlled Sub: Reduces 27 Hz transformer bump down to 0.0x (Flat Sub) while keeping warm analog top
+        void setBipolarTone (double rawTone) noexcept
+        {
+            const double clamped = std::clamp (rawTone, -10.0, 10.0);
+            const double newSubScale = (clamped >= 0.0)
+                                         ? (1.0 + (clamped / 10.0) * 0.5)
+                                         : std::max (0.0, 1.0 + (clamped / 10.0));
+            // Per-stage high-shelf offset in dB: 0.0 dB at Tone <= 0, up to +0.57 dB/stage (+4.56 dB total across 8 stages) at Tone = +10
+            const double newAirOffsetDb = (clamped > 0.0) ? ((clamped / 10.0) * 0.57) : 0.0;
+
+            if (std::abs (subBumpScale - newSubScale) > 1.0e-4
+             || std::abs (airShelfOffsetDb - newAirOffsetDb) > 1.0e-4)
+            {
+                subBumpScale     = newSubScale;
+                airShelfOffsetDb = newAirOffsetDb;
+                updateAllStageFilters();
+            }
+        }
+
         void setSlotConfig (int index, const SlotConfig& cfg) noexcept
         {
             if (index < 0 || index >= kNumSlots)
@@ -292,6 +363,37 @@ namespace jj8nls
         {
             if (index >= 0 && index < kNumSlots)
                 slots[static_cast<size_t> (index)].drive = std::clamp (driveVal, 0.0, 12.0);
+        }
+
+        // Bipolar Drive helper [-10.0 .. +10.0]:
+        //   +1.0         = 1:1 Jaycen Joshua 8x Chain (Slot 1 Drive 1.0, Global Harmonics 100%, Transient Exp 0.0)
+        //   +1.0 .. +10.0 = Boosts Slot 1 Drive up to 12.0 + bus saturation
+        //   +1.0 ..  0.0  = Reduces Slot 1 extra Drive down to 0.0
+        //    0.0 .. -10.0 = Hybrid 1+3: Attenuates all 8 consoles' Chebyshev harmonics down to 0% (Clean Transformer)
+        //                   and applies stereo-linked Transient Headroom Expansion (+1.5 dB punch recovery at -10.0)
+        void setBipolarDrive (double rawDrive) noexcept
+        {
+            const double clamped = std::clamp (rawDrive, -10.0, 10.0);
+            if (clamped >= 1.0)
+            {
+                slots[0].drive = std::clamp (clamped * 1.2, 0.0, 12.0);
+                globalHarmonicScale = 1.0;
+                transientExpansionAmount = 0.0;
+            }
+            else if (clamped >= 0.0)
+            {
+                slots[0].drive = clamped;
+                globalHarmonicScale = 1.0;
+                transientExpansionAmount = 0.0;
+            }
+            else
+            {
+                slots[0].drive = 0.0;
+                const double normNeg = std::clamp (-clamped / 10.0, 0.0, 1.0); // 0.0 at 0, 1.0 at -10
+                // Smooth quadratic fade of all 8 stages' harmonics down to 0.0 (100% Clean Transformer EQ at -10)
+                globalHarmonicScale = (1.0 - normNeg) * (1.0 - normNeg);
+                transientExpansionAmount = normNeg;
+            }
         }
 
         void setSlotModel (int index, ConsoleModel model) noexcept
@@ -325,6 +427,7 @@ namespace jj8nls
         }
 
         void setMasterNoiseEnabled (bool en) noexcept { masterNoiseEnabled = en; }
+        bool getMasterNoiseEnabled() const noexcept   { return masterNoiseEnabled; }
         void setAutoPeakRmsBalance (bool en) noexcept { autoPeakRmsBalance = en; }
         void setAutoGainEnabled (bool en) noexcept    { autoGainEnabled = en; }
         bool getAutoGainEnabled() const noexcept      { return autoGainEnabled; }
@@ -360,19 +463,17 @@ namespace jj8nls
                 xR = processSingleStage (xR, 1, slotIdx, cfg, humSample, stageRefR);
             }
 
-            // Unity 1kHz reference makeup depending on balance mode
+            // Unity 1kHz reference makeup depending on balance mode and active console variant
             if (balanceMode == StereoBalanceMode::SubAndMidLocked)
             {
-                // Exact +0.75 dB makeup so 1 kHz sits at 0.00 dB and L=R across 20 Hz - 20 kHz
-                constexpr double kUnityMakeup = 1.0901844924; // 10^(+0.75 / 20)
-                xL *= kUnityMakeup;
-                xR *= kUnityMakeup;
+                const double makeup = getUnityMakeupForCurrentVariant();
+                xL *= makeup;
+                xR *= makeup;
             }
             else if (balanceMode == StereoBalanceMode::SubLockedMidTol)
             {
-                // Sub (20-90 Hz) is already L=R locked in the stage filters;
-                // equalize the 0.70 dB mid offset (+0.75 dB on L, +0.05 dB on R)
-                xL *= 1.0901844924; // +0.75 dB
+                const double makeup = getUnityMakeupForCurrentVariant();
+                xL *= makeup;
                 xR *= 1.0057730629; // +0.05 dB
             }
 
@@ -403,6 +504,15 @@ namespace jj8nls
                 const double gR = std::pow (10.0, +0.5 * manualBalanceDb / 20.0);
                 xL *= gL;
                 xR *= gR;
+            }
+
+            // Hybrid Negative Drive (0.0 .. -10.0): Stereo-linked Transient Headroom Expansion
+            if (transientExpansionAmount > 1.0e-4)
+            {
+                const double peakLink = std::max (std::abs (xL), std::abs (xR));
+                const double transGain = computeTransientExpansionGain (peakLink);
+                xL *= transGain;
+                xR *= transGain;
             }
 
             // Stereo-linked AutoGain: matches output RMS to input RMS (compensating for the +6.2 dB @ 27 Hz sub punch
@@ -437,7 +547,93 @@ namespace jj8nls
             right = static_cast<float> (xR);
         }
 
+        void processSampleMono (float& sample) noexcept
+        {
+            double x = static_cast<double> (sample);
+            const double inPower = x * x;
+
+            double stageRef = 0.2182729;
+
+            // Advance 50 Hz & 100 Hz power-supply hum oscillators
+            const double inc50  = 2.0 * kPi * 50.0 / sampleRate;
+            const double inc100 = 2.0 * kPi * 100.0 / sampleRate;
+            humPhase50  += inc50;
+            humPhase100 += inc100;
+            if (humPhase50 >= 2.0 * kPi)  humPhase50  -= 2.0 * kPi;
+            if (humPhase100 >= 2.0 * kPi) humPhase100 -= 2.0 * kPi;
+
+            const double humSample = 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100);
+
+            for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
+            {
+                const auto& cfg = slots[static_cast<size_t> (slotIdx)];
+                if (! cfg.enabled)
+                    continue;
+
+                x = processSingleStage (x, 0, slotIdx, cfg, humSample, stageRef);
+            }
+
+            // Unity 1kHz reference makeup depending on balance mode and active console variant
+            if (balanceMode == StereoBalanceMode::SubAndMidLocked
+             || balanceMode == StereoBalanceMode::SubLockedMidTol)
+            {
+                x *= getUnityMakeupForCurrentVariant();
+            }
+
+            if (transientExpansionAmount > 1.0e-4)
+                x *= computeTransientExpansionGain (std::abs (x));
+
+            if (autoGainEnabled)
+            {
+                const double outPower = x * x;
+                inRmsEnv  += autoGainRmsCoeff * (inPower  - inRmsEnv);
+                outRmsEnv += autoGainRmsCoeff * (outPower - outRmsEnv);
+
+                if (inRmsEnv > 1.0e-6 && outRmsEnv > 1.0e-6)
+                {
+                    const double ratio = std::sqrt (inRmsEnv / outRmsEnv);
+                    const double targetGain = std::clamp (ratio, 0.1778279, 1.9952623);
+                    autoGainLinear += autoGainSmoothCoeff * (targetGain - autoGainLinear);
+                }
+                else
+                {
+                    autoGainLinear += autoGainSmoothCoeff * (1.0 - autoGainLinear);
+                }
+
+                x *= autoGainLinear;
+            }
+
+            x *= outputTrimLinear;
+            sample = static_cast<float> (x);
+        }
+
     private:
+        inline double getUnityMakeupForCurrentVariant() const noexcept
+        {
+            switch (currentConsoleVariant)
+            {
+                case 1:  return 1.0471285481; // All Spike 8x (+0.40 dB makeup for 8 x -0.05 dB)
+                case 2:  return 1.0964781961; // All Nevo 8x  (+0.80 dB makeup for 8 x -0.10 dB)
+                case 3:  return 1.1168632478; // All Mike 8x  (+0.96 dB makeup for 8 x -0.12 dB)
+                default: return 1.0901844924; // Jaycen Joshua 8x (+0.75 dB makeup)
+            }
+        }
+
+        inline double computeTransientExpansionGain (double absSample) noexcept
+        {
+            const double fastCoeff = (absSample > transFastEnv) ? transFastAttackCoeff : transFastReleaseCoeff;
+            transFastEnv += fastCoeff * (absSample - transFastEnv);
+            transSlowEnv += transSlowCoeff * (absSample - transSlowEnv);
+
+            if (transSlowEnv > 1.0e-4 && transFastEnv > transSlowEnv)
+            {
+                // Ratio of fast attack envelope over slow body envelope -> up to +1.5 dB (+18.8%) transient punch at -10 Drive
+                const double crestExcess = std::clamp ((transFastEnv / (transSlowEnv + 1.0e-5)) - 1.0, 0.0, 1.5);
+                return 1.0 + transientExpansionAmount * 0.125 * crestExcess;
+            }
+            return 1.0;
+        }
+
         inline double nextWhiteNoise() noexcept
         {
             // Fast xorshift64* PRNG in [-1.0, +1.0]
@@ -593,7 +789,7 @@ namespace jj8nls
             }
 
             // Scale harmonics proportionally to signal envelope so THD stays at -34.3 dB across all levels without clipping
-            double out = s + drvMult * modelScale * scaleFactor * harmSum;
+            double out = s + globalHarmonicScale * drvMult * modelScale * scaleFactor * harmSum;
 
             // Gentle console bus headroom saturation at high signal + drive levels
             if (drive > 1.5)
@@ -648,7 +844,7 @@ namespace jj8nls
                     const double dip92Db = (lockSub ? -0.30 : (subCh == 0 ? -0.22 : -0.38)) * subScale;
                     const double dip92Hz = lockSub ? 92.0 : (subCh == 0 ? 93.0 : 91.0);
 
-                    const double hsDb    = lockMid ? -0.36 : (midCh == 0 ? -0.35 : -0.38);
+                    const double hsDb    = (lockMid ? -0.36 : (midCh == 0 ? -0.35 : -0.38)) + airShelfOffsetDb;
                     const double hsHz    = lockMid ? 16000.0 : (midCh == 0 ? 16200.0 : 15900.0);
                     const double stageDb = lockMid ? -0.12 : (midCh == 0 ? -0.17 : -0.07);
 
@@ -665,7 +861,7 @@ namespace jj8nls
                     const double sub27Db = (lockSub ? 0.24 : (subCh == 0 ? 0.28 : 0.20)) * subScale;
                     const double sub52Db = (lockSub ? 0.08 : (subCh == 0 ? 0.10 : 0.06)) * subScale;
                     const double dip92Db = (lockSub ? -0.10 : (subCh == 0 ? -0.08 : -0.12)) * subScale;
-                    const double hsDb    = lockMid ? -0.19 : (midCh == 0 ? -0.18 : -0.20);
+                    const double hsDb    = (lockMid ? -0.19 : (midCh == 0 ? -0.18 : -0.20)) + airShelfOffsetDb;
                     const double stageDb = lockMid ? -0.05 : (midCh == 0 ? -0.08 : -0.03);
 
                     st.filters[0] = BiquadSection::makeHighPass  (6.0,     0.71,   sampleRate);
@@ -680,7 +876,7 @@ namespace jj8nls
                     const double sub27Db = (lockSub ? 0.85 : (subCh == 0 ? 0.95 : 0.72)) * subScale;
                     const double sub52Db = (lockSub ? 0.23 : (subCh == 0 ? 0.28 : 0.18)) * subScale;
                     const double dip92Db = (lockSub ? -0.24 : (subCh == 0 ? -0.20 : -0.28)) * subScale;
-                    const double hsDb    = lockMid ? -0.44 : (midCh == 0 ? -0.42 : -0.45);
+                    const double hsDb    = (lockMid ? -0.44 : (midCh == 0 ? -0.42 : -0.45)) + airShelfOffsetDb;
                     const double stageDb = lockMid ? -0.10 : (midCh == 0 ? -0.14 : -0.06);
 
                     st.filters[0] = BiquadSection::makeHighPass  (8.0,     0.74,   sampleRate);
@@ -699,9 +895,16 @@ namespace jj8nls
         double peakReleaseCoeff = 0.00004;
         double autoGainRmsCoeff = 0.00017;
         double autoGainSmoothCoeff = 0.00046;
+        double transFastAttackCoeff  = 0.0138;
+        double transFastReleaseCoeff = 0.0006;
+        double transSlowCoeff        = 0.00023;
 
         StereoBalanceMode balanceMode = StereoBalanceMode::SubAndMidLocked;
+        int currentConsoleVariant = 0;
         double subBumpScale      = 1.0;
+        double airShelfOffsetDb  = 0.0;
+        double globalHarmonicScale = 1.0;
+        double transientExpansionAmount = 0.0;
         bool masterNoiseEnabled  = true;
         bool autoPeakRmsBalance  = true;
         bool autoGainEnabled     = true;
@@ -717,6 +920,8 @@ namespace jj8nls
         double inRmsEnv    = 1.0e-8;
         double outRmsEnv   = 1.0e-8;
         double autoGainLinear = 1.0;
+        double transFastEnv = 1.0e-6;
+        double transSlowEnv = 1.0e-6;
         uint64_t rngState  = 0x853C49E6748FEA9BULL;
 
         std::array<SlotConfig, kNumSlots> slots;

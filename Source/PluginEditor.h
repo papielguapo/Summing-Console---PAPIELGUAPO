@@ -68,21 +68,23 @@ public:
             juce::String character = "Jaycen Joshua 8x Default (+1.0)";
             if (v > 1.05)
                 character = "Mas saturacion armonica H2..H16 en las 8 consolas";
-            else if (v < 0.95)
-                character = "Menos saturacion (hacia transformador limpio)";
+            else if (v >= 0.0)
+                character = "Menos empuje en Slot 1 (hacia base 8x NLS)";
+            else
+                character = "Transformador Limpio (reduce THD en las 8 consolas) + Expansion de Transitorios (+Punch)";
 
-            return name + " (Saturacion 8x NLS): " + valStr
-                 + " [" + character + "] — Doble clic: +1.0 | Clic derecho: Skins";
+            return name + " (Saturacion / Clean Punch 8x NLS): " + valStr
+                 + " [" + character + "] — Doble clic: +1.0 | Clic derecho: Menu";
         }
 
         juce::String subInfo = "1:1 Jaycen Joshua (+6.2 dB @ 27 Hz, L=R 0.00 dB)";
         if (v > 0.05)
-            subInfo = "Mas golpe Subgrave 27 Hz de transformador (hasta +9.3 dB)";
+            subInfo = "Full Phat & Air: Mas Subgrave 27 Hz (hasta +9.3 dB) + Abre Aire 16 kHz";
         else if (v < -0.05)
-            subInfo = "Recorte del Subgrave 27 Hz (hacia respuesta plana)";
+            subInfo = "Tight Sub: Controla/recorta el bulto de 27 Hz hacia respuesta plana";
 
-        return name + " (Golpe Subgrave 27 Hz L=R): " + valStr
-             + " [" + subInfo + "] — Doble clic: 0.0 | Clic derecho: Skins";
+        return name + " (Sub 27 Hz + Air 16 kHz L=R): " + valStr
+             + " [" + subInfo + "] — Doble clic: 0.0 | Clic derecho: Menu";
     }
 
 private:

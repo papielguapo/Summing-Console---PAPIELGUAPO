@@ -2,9 +2,12 @@
 
 #include <JuceHeader.h>
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_dsp/juce_dsp.h>
 #include "DSP/JJ8NLSDSP.h"
 #include "FLStudioLookAndFeel.h"
+#include <array>
 #include <atomic>
+#include <memory>
 
 class JJ8NLSAudioProcessor : public juce::AudioProcessor
 {
@@ -54,6 +57,12 @@ public:
     int getOversamplingMode() const noexcept { return oversamplingMode.load (std::memory_order_relaxed); }
     void setOversamplingMode (int newOS) noexcept { oversamplingMode.store (juce::jlimit (0, 3, newOS), std::memory_order_relaxed); }
 
+    int getConsoleVariant() const noexcept { return consoleVariant.load (std::memory_order_relaxed); }
+    void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 3, newVar), std::memory_order_relaxed); }
+
+    bool getAnalogNoiseEnabled() const noexcept { return analogNoiseEnabled.load (std::memory_order_relaxed); }
+    void setAnalogNoiseEnabled (bool en) noexcept { analogNoiseEnabled.store (en, std::memory_order_relaxed); }
+
     bool isLinkedMode() const noexcept
     {
         return (autoGainParam != nullptr) ? (autoGainParam->load (std::memory_order_relaxed) >= 0.5f) : true;
@@ -78,6 +87,7 @@ public:
 
 private:
     void syncParametersToEngine() noexcept;
+    void applyOversamplingConfiguration (int osMode);
 
     juce::AudioProcessorValueTreeState apvts;
     std::atomic<float>* driveParam    = nullptr;
@@ -87,14 +97,23 @@ private:
 
     std::atomic<int> skinIndex        { flheat::kSkinFLStudio };
     std::atomic<int> oversamplingMode { 2 };
+    std::atomic<int> consoleVariant   { 0 };
+    std::atomic<bool> analogNoiseEnabled { true };
     std::atomic<int> savedEditorWidth  { 130 };
     std::atomic<int> savedEditorHeight { 240 };
     std::atomic<float> harmonicActivity { 0.0f };
 
     jj8nls::JJ8NLSChainDSP dspEngine;
+    std::array<std::unique_ptr<juce::dsp::Oversampling<float>>, 3> oversamplers;
+    juce::SmoothedValue<double, juce::ValueSmoothingTypes::Linear> driveSmoothed;
+    double baseSampleRate  = 48000.0;
+    int maxBlockSize       = 512;
+    int activeOSMode       = -1;
     double lastDriveVal    = -999.0;
     double lastSubPunchVal = -999.0;
     bool lastAutoGainVal   = true;
+    int lastConsoleVariant = -1;
+    bool lastNoiseEnabled  = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JJ8NLSAudioProcessor)
 };
