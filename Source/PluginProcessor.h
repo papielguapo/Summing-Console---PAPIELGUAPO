@@ -60,6 +60,9 @@ public:
     int getConsoleVariant() const noexcept { return consoleVariant.load (std::memory_order_relaxed); }
     void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 4, newVar), std::memory_order_relaxed); }
 
+    int getActiveStages() const noexcept { return activeStages.load (std::memory_order_relaxed); }
+    void setActiveStages (int n) noexcept { activeStages.store (juce::jlimit (1, 8, n), std::memory_order_relaxed); }
+
     bool getAnalogNoiseEnabled() const noexcept { return analogNoiseEnabled.load (std::memory_order_relaxed); }
     void setAnalogNoiseEnabled (bool en) noexcept { analogNoiseEnabled.store (en, std::memory_order_relaxed); }
 
@@ -98,6 +101,7 @@ private:
     std::atomic<int> skinIndex        { flheat::kSkinFLStudio };
     std::atomic<int> oversamplingMode { 2 };
     std::atomic<int> consoleVariant   { 0 };
+    std::atomic<int> activeStages     { 8 };
     std::atomic<bool> analogNoiseEnabled { true };
     std::atomic<int> savedEditorWidth  { 130 };
     std::atomic<int> savedEditorHeight { 240 };
@@ -113,6 +117,7 @@ private:
     double lastSubPunchVal = -999.0;
     bool lastAutoGainVal   = true;
     int lastConsoleVariant = -1;
+    int lastActiveStages   = -1;
     bool lastNoiseEnabled  = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JJ8NLSAudioProcessor)

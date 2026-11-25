@@ -610,6 +610,7 @@ private:
     float displayedPolarity = 0.0f;
     int   currentSkinStyle  = flheat::kSkinFLStudio;
     int   displayedOSMode   = 2;
+    int   displayedStages   = 8;
 
     float logicalScale = 1.0f;
     float logicalW     = 130.0f;

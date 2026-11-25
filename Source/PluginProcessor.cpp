@@ -144,6 +144,13 @@ void JJ8NLSAudioProcessor::syncParametersToEngine() noexcept
         dspEngine.setConsoleVariant (curVar);
     }
 
+    const int curStages = getActiveStages();
+    if (curStages != lastActiveStages)
+    {
+        lastActiveStages = curStages;
+        dspEngine.setActiveStageCount (curStages);
+    }
+
     const bool curNoise = getAnalogNoiseEnabled();
     if (curNoise != lastNoiseEnabled)
     {
@@ -169,6 +176,7 @@ void JJ8NLSAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     lastDriveVal       = -999.0;
     lastSubPunchVal    = -999.0;
     lastConsoleVariant = -1;
+    lastActiveStages   = -1;
     applyOversamplingConfiguration (getOversamplingMode());
     syncParametersToEngine();
 }
@@ -305,6 +313,7 @@ void JJ8NLSAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("skinIndex",          getSkinIndex(), nullptr);
     state.setProperty ("oversamplingMode",   getOversamplingMode(), nullptr);
     state.setProperty ("consoleVariant",     getConsoleVariant(), nullptr);
+    state.setProperty ("activeStages",       getActiveStages(), nullptr);
     state.setProperty ("analogNoiseEnabled", getAnalogNoiseEnabled(), nullptr);
     state.setProperty ("editorW",            getSavedEditorWidth(), nullptr);
     state.setProperty ("editorH",            getSavedEditorHeight(), nullptr);
@@ -325,6 +334,8 @@ void JJ8NLSAudioProcessor::setStateInformation (const void* data, int sizeInByte
                 setOversamplingMode (static_cast<int> (vt.getProperty ("oversamplingMode")));
             if (vt.hasProperty ("consoleVariant"))
                 setConsoleVariant (static_cast<int> (vt.getProperty ("consoleVariant")));
+            if (vt.hasProperty ("activeStages"))
+                setActiveStages (static_cast<int> (vt.getProperty ("activeStages")));
             if (vt.hasProperty ("analogNoiseEnabled"))
                 setAnalogNoiseEnabled (static_cast<bool> (vt.getProperty ("analogNoiseEnabled")));
             if (vt.hasProperty ("editorW") && vt.hasProperty ("editorH"))

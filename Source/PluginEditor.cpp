@@ -47,6 +47,7 @@ FLHeatAudioProcessorEditor::FLHeatAudioProcessorEditor (FLHeatAudioProcessor& p)
 
     currentSkinStyle = audioProcessor.getSkinIndex();
     displayedOSMode  = audioProcessor.getOversamplingMode();
+    displayedStages  = audioProcessor.getActiveStages();
     flLookAndFeel.setSkinStyle (currentSkinStyle);
     linkButton.skinStyle   = currentSkinStyle;
     bypassButton.skinStyle = currentSkinStyle;
@@ -81,11 +82,12 @@ void FLHeatAudioProcessorEditor::showContextMenu()
 {
     juce::PopupMenu menu;
 
-    const int curSkin  = audioProcessor.getSkinIndex();
-    const int curOS    = audioProcessor.getOversamplingMode();
-    const int curVar   = audioProcessor.getConsoleVariant();
-    const bool isNoise = audioProcessor.getAnalogNoiseEnabled();
-    const bool isLnk   = audioProcessor.isLinkedMode();
+    const int curSkin   = audioProcessor.getSkinIndex();
+    const int curOS     = audioProcessor.getOversamplingMode();
+    const int curVar    = audioProcessor.getConsoleVariant();
+    const int curStages = audioProcessor.getActiveStages();
+    const bool isNoise  = audioProcessor.getAnalogNoiseEnabled();
+    const bool isLnk    = audioProcessor.isLinkedMode();
 
     menu.addSectionHeader ("SUMMING CONSOLE - SKIN / THEME");
     menu.addItem (1, "1. FL Studio (Dark Mixer UI)",        true, curSkin == flheat::kSkinFLStudio);
@@ -94,6 +96,17 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (4, "4. Ableton Live 12 (Rack Device)",    true, curSkin == flheat::kSkinAbletonLive);
     menu.addItem (5, "5. Apple Logic Pro X (Space Grey)",   true, curSkin == flheat::kSkinLogicProX);
     menu.addItem (6, "6. Steinberg Cubase 14 (MixConsole)", true, curSkin == flheat::kSkinCubase);
+
+    menu.addSeparator();
+    menu.addSectionHeader ("NLS CONSOLE STAGES (1x .. 8x CASCADE)");
+    menu.addItem (61, "1x NLS Stage (1: Mike - Single Console)",          true, curStages == 1);
+    menu.addItem (62, "2x NLS Stages (1:Mike -> 2:Spike)",                true, curStages == 2);
+    menu.addItem (63, "3x NLS Stages (1..3 Cascade)",                     true, curStages == 3);
+    menu.addItem (64, "4x NLS Stages (Half Chain - Vocals / Synths)",     true, curStages == 4);
+    menu.addItem (65, "5x NLS Stages (1..5 Cascade)",                     true, curStages == 5);
+    menu.addItem (66, "6x NLS Stages (1..6 Cascade - Mix Bus)",           true, curStages == 6);
+    menu.addItem (67, "7x NLS Stages (1..7 Cascade)",                     true, curStages == 7);
+    menu.addItem (68, "8x NLS Stages (Default Full Jaycen Joshua Chain)", true, curStages == 8);
 
     menu.addSeparator();
     menu.addSectionHeader ("8x CONSOLE CHAIN VARIANT (0.00 dB L=R)");
@@ -158,6 +171,12 @@ void FLHeatAudioProcessorEditor::showContextMenu()
             proc.setConsoleVariant (result - 40);
             safeThis->repaint();
         }
+        else if (result >= 61 && result <= 68)
+        {
+            proc.setActiveStages (result - 60);
+            safeThis->displayedStages = proc.getActiveStages();
+            safeThis->repaint();
+        }
         else if (result == 50 || result == 51)
         {
             proc.setAnalogNoiseEnabled (result == 50);
@@ -178,13 +197,15 @@ void FLHeatAudioProcessorEditor::showContextMenu()
 
 void FLHeatAudioProcessorEditor::syncSkinState()
 {
-    const int wantSkin = audioProcessor.getSkinIndex();
-    const int wantOS   = audioProcessor.getOversamplingMode();
+    const int wantSkin   = audioProcessor.getSkinIndex();
+    const int wantOS     = audioProcessor.getOversamplingMode();
+    const int wantStages = audioProcessor.getActiveStages();
 
-    if (currentSkinStyle != wantSkin || displayedOSMode != wantOS)
+    if (currentSkinStyle != wantSkin || displayedOSMode != wantOS || displayedStages != wantStages)
     {
         currentSkinStyle = wantSkin;
         displayedOSMode  = wantOS;
+        displayedStages  = wantStages;
         flLookAndFeel.setSkinStyle (currentSkinStyle);
         linkButton.skinStyle   = currentSkinStyle;
         bypassButton.skinStyle = currentSkinStyle;
@@ -232,6 +253,54 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
     {
         showContextMenu();
         return;
+    }
+
+    const juce::Point<float> logicalPos (event.position.x / std::max (0.1f, logicalScale),
+                                         event.position.y / std::max (0.1f, logicalScale));
+
+    // Left-clicking the top header bar (outside the LNK/AutoGain button) cycles Stages (8x -> 4x -> 2x -> 1x)
+    // Shift+Click on the header cycles Oversampling (1x -> 2x -> 4x -> 8x)
+    if (currentSkinStyle == flheat::kSkinProTools)
+    {
+        if (ptTitleBounds.contains (logicalPos))
+        {
+            if (event.mods.isShiftDown())
+            {
+                const int nextOS = (audioProcessor.getOversamplingMode() + 1) % 4;
+                audioProcessor.setOversamplingMode (nextOS);
+                displayedOSMode = nextOS;
+            }
+            else
+            {
+                const int curSt = audioProcessor.getActiveStages();
+                const int nextSt = (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
+                audioProcessor.setActiveStages (nextSt);
+                displayedStages = nextSt;
+            }
+            repaint();
+            return;
+        }
+    }
+    else
+    {
+        if (headerBounds.withTrimmedRight (42.0f).contains (logicalPos))
+        {
+            if (event.mods.isShiftDown())
+            {
+                const int nextOS = (audioProcessor.getOversamplingMode() + 1) % 4;
+                audioProcessor.setOversamplingMode (nextOS);
+                displayedOSMode = nextOS;
+            }
+            else
+            {
+                const int curSt = audioProcessor.getActiveStages();
+                const int nextSt = (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
+                audioProcessor.setActiveStages (nextSt);
+                displayedStages = nextSt;
+            }
+            repaint();
+            return;
+        }
     }
 
     juce::AudioProcessorEditor::mouseDown (event);

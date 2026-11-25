@@ -501,6 +501,8 @@ namespace jj8nls
 
         void setMasterNoiseEnabled (bool en) noexcept { masterNoiseEnabled = en; }
         bool getMasterNoiseEnabled() const noexcept   { return masterNoiseEnabled; }
+        void setActiveStageCount (int count) noexcept { activeStageCount = std::clamp (count, 1, kNumSlots); }
+        int getActiveStageCount() const noexcept      { return activeStageCount; }
         void setAutoPeakRmsBalance (bool en) noexcept { autoPeakRmsBalance = en; }
         void setAutoGainEnabled (bool en) noexcept    { autoGainEnabled = en; }
         bool getAutoGainEnabled() const noexcept      { return autoGainEnabled; }
@@ -526,7 +528,7 @@ namespace jj8nls
 
             const double humSample = 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100);
 
-            for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
+            for (int slotIdx = 0; slotIdx < activeStageCount; ++slotIdx)
             {
                 const auto& cfg = slots[static_cast<size_t> (slotIdx)];
                 if (! cfg.enabled)
@@ -637,7 +639,7 @@ namespace jj8nls
 
             const double humSample = 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100);
 
-            for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
+            for (int slotIdx = 0; slotIdx < activeStageCount; ++slotIdx)
             {
                 const auto& cfg = slots[static_cast<size_t> (slotIdx)];
                 if (! cfg.enabled)
@@ -683,14 +685,18 @@ namespace jj8nls
     private:
         inline double getUnityMakeupForCurrentVariant() const noexcept
         {
+            double full8Makeup = 1.0901844924;
             switch (currentConsoleVariant)
             {
-                case 1:  return 1.0471285481; // All Spike 8x (+0.40 dB makeup for 8 x -0.05 dB)
-                case 2:  return 1.0964781961; // All Nevo 8x  (+0.80 dB makeup for 8 x -0.10 dB)
-                case 3:  return 1.1168632478; // All Mike 8x  (+0.96 dB makeup for 8 x -0.12 dB)
-                case 4:  return 1.0715193052; // FL HEAT Hybrid 8x (4x Spike + 4x Nevo -> +0.60 dB makeup)
-                default: return 1.0901844924; // Jaycen Joshua 8x (+0.75 dB makeup)
+                case 1:  full8Makeup = 1.0471285481; break; // All Spike 8x (+0.40 dB makeup for 8 x -0.05 dB)
+                case 2:  full8Makeup = 1.0964781961; break; // All Nevo 8x  (+0.80 dB makeup for 8 x -0.10 dB)
+                case 3:  full8Makeup = 1.1168632478; break; // All Mike 8x  (+0.96 dB makeup for 8 x -0.12 dB)
+                case 4:  full8Makeup = 1.0715193052; break; // FL HEAT Hybrid 8x (+0.60 dB makeup)
+                default: full8Makeup = 1.0901844924; break; // Jaycen Joshua 8x (+0.75 dB makeup)
             }
+            if (activeStageCount >= kNumSlots)
+                return full8Makeup;
+            return std::pow (full8Makeup, static_cast<double> (activeStageCount) / static_cast<double> (kNumSlots));
         }
 
         inline double computeTransientExpansionGain (double absSample) noexcept
@@ -976,6 +982,7 @@ namespace jj8nls
 
         StereoBalanceMode balanceMode = StereoBalanceMode::SubAndMidLocked;
         int currentConsoleVariant = 0;
+        int activeStageCount     = kNumSlots;
         double lastRawDrive      = 1.0;
         double lastRawTone       = 0.0;
         double subBumpScale      = 1.0;
