@@ -450,7 +450,10 @@ namespace jj8nls
             if (clamped >= 1.0)
             {
                 slots[0].drive = std::clamp (clamped * 1.2, 0.0, 12.0);
-                globalHarmonicScale = 1.0;
+                // Scale all 8 stages' harmonics proportionally when boosting Drive above +1.0 (1.0x at +1.0 up to 2.8x at +10.0)
+                // so adding stages 1x -> 8x always scales all harmonics proportionally at any Drive position
+                const double normPos = std::clamp ((clamped - 1.0) / 9.0, 0.0, 1.0);
+                globalHarmonicScale = 1.0 + 1.8 * normPos;
                 transientExpansionAmount = 0.0;
             }
             else if (clamped >= 0.0)

@@ -529,7 +529,7 @@ void FLHeatAudioProcessorEditor::paintAbletonLiveSkin (juce::Graphics& g)
 
     g.setFont (flheat::FLStudioLookAndFeel::getFLFont (11.5f, true));
     g.setColour (flheat::FLStudioLookAndFeel::kLiveText);
-    const juce::String titleStr = "NLSC";
+    const juce::String titleStr = "NLSC " + juce::String (displayedStages) + "x";
     g.drawText (titleStr,
                 juce::Rectangle<float> (padX + 13.0f, 0.0f, 68.0f, headerBounds.getHeight() - 4.0f),
                 juce::Justification::centredLeft,
@@ -682,7 +682,7 @@ void FLHeatAudioProcessorEditor::paintCubaseSkin (juce::Graphics& g)
 
         g.setFont (flheat::FLStudioLookAndFeel::getFLFont (12.0f, true));
         g.setColour (flheat::FLStudioLookAndFeel::kTextHeader);
-        const juce::String hdrStr = "NLSC";
+        const juce::String hdrStr = "NLSC " + juce::String (displayedStages) + "x";
         g.drawText (hdrStr,
                     juce::Rectangle<float> (padX + 1.0f, headerBounds.getY(), 66.0f, headerBounds.getHeight()),
                     juce::Justification::centredLeft,
@@ -769,7 +769,7 @@ void FLHeatAudioProcessorEditor::paintAtariPCSkin (juce::Graphics& g)
 
         g.setFont (flheat::FLStudioLookAndFeel::getAtariFont (10.5f, true));
         g.setColour (flheat::FLStudioLookAndFeel::kAtariGreenCRT);
-        const juce::String hdrTitle = "NLSC";
+        const juce::String hdrTitle = "NLSC " + juce::String (displayedStages) + "x";
         g.drawText (hdrTitle, 10, titleBar.getY(), 66, titleBar.getHeight(), juce::Justification::centredLeft, false);
     }
 
@@ -857,6 +857,16 @@ void FLHeatAudioProcessorEditor::paintProToolsSkin (juce::Graphics& g)
     g.setColour (flheat::FLStudioLookAndFeel::kPTTitleText);
     g.drawText ("NLSC", ptTitleBounds, juce::Justification::centred, false);
 
+    if (displayedStages != 8)
+    {
+        g.setFont (flheat::FLStudioLookAndFeel::getFLFont (8.2f, true));
+        g.setColour (flheat::FLStudioLookAndFeel::kPTTitleText.withAlpha (0.65f));
+        g.drawText (juce::String (displayedStages) + "x",
+                    ptTitleBounds.withTrimmedRight (2.0f),
+                    juce::Justification::centredRight,
+                    false);
+    }
+
     {
         const float slotCorner = 2.8f;
         g.setColour (juce::Colour (0xff2b2d2f));
@@ -937,8 +947,9 @@ void FLHeatAudioProcessorEditor::paintFLStudioSkin (juce::Graphics& g)
         g.setColour (flheat::FLStudioLookAndFeel::kTextHeader);
 
         const float titleX = padX + 1.0f;
-        const float titleW = 38.0f;
-        g.drawText ("NLSC",
+        const bool showStageCount = (displayedStages != 8);
+        const float titleW = showStageCount ? 56.0f : 38.0f;
+        g.drawText (showStageCount ? ("NLSC " + juce::String (displayedStages) + "x") : juce::String ("NLSC"),
                     juce::Rectangle<float> (titleX, headerBounds.getY(), titleW, headerBounds.getHeight()),
                     juce::Justification::centredLeft,
                     false);
