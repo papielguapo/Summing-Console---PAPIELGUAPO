@@ -460,7 +460,7 @@ void FLHeatAudioProcessorEditor::paintAbletonLiveSkin (juce::Graphics& g)
 
     g.setFont (flheat::FLStudioLookAndFeel::getFLFont (11.5f, true));
     g.setColour (flheat::FLStudioLookAndFeel::kLiveText);
-    const juce::String titleStr = juce::String ("HEAT ") + getOversamplingShortTag (displayedOSMode);
+    const juce::String titleStr = "NLSC";
     g.drawText (titleStr,
                 juce::Rectangle<float> (padX + 13.0f, 0.0f, 68.0f, headerBounds.getHeight() - 4.0f),
                 juce::Justification::centredLeft,
@@ -534,7 +534,7 @@ void FLHeatAudioProcessorEditor::paintLogicProSkin (juce::Graphics& g)
 
         g.setFont (flheat::FLStudioLookAndFeel::getFLFont (12.5f, true));
         g.setColour (juce::Colours::white);
-        g.drawText ("HEAT",
+        g.drawText ("NLSC",
                     juce::Rectangle<float> (padX + 1.0f, headerBounds.getY(), 38.0f, headerBounds.getHeight()),
                     juce::Justification::centredLeft,
                     false);
@@ -546,16 +546,6 @@ void FLHeatAudioProcessorEditor::paintLogicProSkin (juce::Graphics& g)
                                   : static_cast<float> (driveKnob.getValue());
 
         flheat::FLStudioLookAndFeel::drawHarmonicLED (g, ledCenter, 3.2f, displayedActivity, polarity, isBypassed);
-
-        const juce::Rectangle<float> osBadge (ledCenter.x + 6.5f, headerBounds.getCentreY() - 6.5f, 20.0f, 13.0f);
-        g.setColour (flheat::FLStudioLookAndFeel::kLogicCardBg);
-        g.fillRoundedRectangle (osBadge, 3.0f);
-        g.setColour (flheat::FLStudioLookAndFeel::kLogicCardBorder);
-        g.drawRoundedRectangle (osBadge, 3.0f, 0.9f);
-
-        g.setFont (flheat::FLStudioLookAndFeel::getFLFont (8.0f, true));
-        g.setColour (flheat::FLStudioLookAndFeel::kLogicCyan);
-        g.drawText (getOversamplingShortTag (displayedOSMode), osBadge, juce::Justification::centred, false);
     }
 
     // 3. Dark Glass Cards for DRIVE & TONE
@@ -623,7 +613,7 @@ void FLHeatAudioProcessorEditor::paintCubaseSkin (juce::Graphics& g)
 
         g.setFont (flheat::FLStudioLookAndFeel::getFLFont (12.0f, true));
         g.setColour (flheat::FLStudioLookAndFeel::kTextHeader);
-        const juce::String hdrStr = juce::String ("HEAT ") + getOversamplingShortTag (displayedOSMode);
+        const juce::String hdrStr = "NLSC";
         g.drawText (hdrStr,
                     juce::Rectangle<float> (padX + 1.0f, headerBounds.getY(), 66.0f, headerBounds.getHeight()),
                     juce::Justification::centredLeft,
@@ -710,7 +700,7 @@ void FLHeatAudioProcessorEditor::paintAtariPCSkin (juce::Graphics& g)
 
         g.setFont (flheat::FLStudioLookAndFeel::getAtariFont (10.5f, true));
         g.setColour (flheat::FLStudioLookAndFeel::kAtariGreenCRT);
-        const juce::String hdrTitle = juce::String ("HEAT ") + getOversamplingShortTag (displayedOSMode);
+        const juce::String hdrTitle = "NLSC";
         g.drawText (hdrTitle, 10, titleBar.getY(), 66, titleBar.getHeight(), juce::Justification::centredLeft, false);
     }
 
@@ -796,14 +786,7 @@ void FLHeatAudioProcessorEditor::paintProToolsSkin (juce::Graphics& g)
 
     g.setFont (flheat::FLStudioLookAndFeel::getFLFont (13.0f, false));
     g.setColour (flheat::FLStudioLookAndFeel::kPTTitleText);
-    g.drawText ("HEAT", ptTitleBounds, juce::Justification::centred, false);
-
-    g.setFont (flheat::FLStudioLookAndFeel::getFLFont (7.8f, true));
-    g.setColour (flheat::FLStudioLookAndFeel::kPTTitleText.withAlpha (0.55f));
-    g.drawText (getOversamplingShortTag (displayedOSMode),
-                ptTitleBounds.withTrimmedRight (2.0f),
-                juce::Justification::centredRight,
-                false);
+    g.drawText ("NLSC", ptTitleBounds, juce::Justification::centred, false);
 
     {
         const float slotCorner = 2.8f;
@@ -886,7 +869,7 @@ void FLHeatAudioProcessorEditor::paintFLStudioSkin (juce::Graphics& g)
 
         const float titleX = padX + 1.0f;
         const float titleW = 38.0f;
-        g.drawText ("HEAT",
+        g.drawText ("NLSC",
                     juce::Rectangle<float> (titleX, headerBounds.getY(), titleW, headerBounds.getHeight()),
                     juce::Justification::centredLeft,
                     false);
