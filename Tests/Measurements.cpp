@@ -81,6 +81,20 @@ void parameter(JJ8NLSAudioProcessor& p,const char* id,float value)
 { auto* par=p.getAPVTS().getParameter(id); par->setValueNotifyingHost(par->convertTo0to1(value)); }
 void regressions()
 {
+    {
+        JJ8NLSAudioProcessor p;
+        check(p.getMikeMask()==15 && p.getActiveStages()==8, "new instance enables all eight stages");
+        for (int expected : {14, 12, 8, 0, 15})
+        {
+            p.advanceMikeBypass();
+            check(p.getMikeMask()==expected, "NLSC progressively bypasses Mike 2 through Mike 5");
+            juce::MemoryBlock saved;
+            p.getStateInformation(saved);
+            JJ8NLSAudioProcessor recalled;
+            recalled.setStateInformation(saved.getData(),static_cast<int>(saved.getSize()));
+            check(recalled.getMikeMask()==expected, "NLSC bypass mask survives session recall");
+        }
+    }
     for(int mode : {0,2,3}) for(double rate : {44100.0,48000.0,96000.0,192000.0}) for(int channels : {1,2})
     {
         JJ8NLSAudioProcessor p;

@@ -198,49 +198,23 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
     const juce::Point<float> logicalPos (event.position.x / std::max (0.1f, logicalScale),
                                          event.position.y / std::max (0.1f, logicalScale));
 
-    // Left-clicking the top header bar (outside the LNK/AutoGain button) cycles Stages (8x -> 4x -> 2x -> 1x)
-    // Shift+Click on the header cycles Oversampling (0x native -> 4x -> 8x)
-    if (currentSkinStyle == flheat::kSkinProTools)
+    const auto titleArea = currentSkinStyle == flheat::kSkinProTools
+                         ? ptTitleBounds : headerBounds.withTrimmedRight (42.0f);
+    if (titleArea.contains (logicalPos))
     {
-        if (ptTitleBounds.contains (logicalPos))
+        if (event.mods.isShiftDown())
         {
-            if (event.mods.isShiftDown())
-            {
-                const int nextOS = audioProcessor.getOversamplingMode() == 0 ? 2 : (audioProcessor.getOversamplingMode() == 2 ? 3 : 0);
-                audioProcessor.setOversamplingMode (nextOS);
-                displayedOSMode = nextOS;
-            }
-            else
-            {
-                const int curSt = audioProcessor.getActiveStages();
-                const int nextSt = curSt == 8 ? 6 : curSt == 6 ? 4 : 8;
-                audioProcessor.setActiveStages (nextSt);
-                displayedStages = nextSt;
-            }
-            repaint();
-            return;
+            const int current = audioProcessor.getOversamplingMode();
+            displayedOSMode = current == 0 ? 2 : current == 2 ? 3 : 0;
+            audioProcessor.setOversamplingMode (displayedOSMode);
         }
-    }
-    else
-    {
-        if (headerBounds.withTrimmedRight (42.0f).contains (logicalPos))
+        else
         {
-            if (event.mods.isShiftDown())
-            {
-                const int nextOS = audioProcessor.getOversamplingMode() == 0 ? 2 : (audioProcessor.getOversamplingMode() == 2 ? 3 : 0);
-                audioProcessor.setOversamplingMode (nextOS);
-                displayedOSMode = nextOS;
-            }
-            else
-            {
-                const int curSt = audioProcessor.getActiveStages();
-                const int nextSt = curSt == 8 ? 6 : curSt == 6 ? 4 : 8;
-                audioProcessor.setActiveStages (nextSt);
-                displayedStages = nextSt;
-            }
-            repaint();
-            return;
+            audioProcessor.advanceMikeBypass();
+            displayedStages = audioProcessor.getActiveStages();
         }
+        repaint();
+        return;
     }
 
     juce::AudioProcessorEditor::mouseDown (event);

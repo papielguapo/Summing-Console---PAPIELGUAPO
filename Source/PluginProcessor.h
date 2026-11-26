@@ -72,6 +72,12 @@ public:
         const int custom = mikeMask.load();
         return custom >= 0 ? custom : (1 << juce::jlimit (0, 4, activeStages.load() - 4)) - 1;
     }
+    void advanceMikeBypass() noexcept
+    {
+        const int mask = getMikeMask();
+        // Bits 0..3 represent Mike 2..5. Clear the first active one.
+        mikeMask.store (mask == 0 ? 15 : mask & (mask - 1));
+    }
     void toggleMike (int index) noexcept
     {
         if (juce::isPositiveAndBelow (index, 4))

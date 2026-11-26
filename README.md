@@ -1,6 +1,6 @@
-# Summing Console — PAPIELGUAPO 2.4.0
+# Summing Console — PAPIELGUAPO 2.4.1
 
-Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike (+0.5 dB Drive) → Mike → Mike → Mike → Mike → Spike → Spike → Nevo (−2 dB Trim)**. Jaycen counts 4–8 retain Mike #1 and slots 6–8, successively bypassing Mike #5 through #2 as the count falls. Counts 1–3 audition the first stages. The header cycles 8, 6 and 4 in Jaycen mode. Disable AutoGain to hear the absolute output trim. Jaycen is the sole processor bank. Sessions saved with earlier banks reopen on Jaycen.
+Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike (+0.5 dB Drive) → Mike → Mike → Mike → Mike → Spike → Spike → Nevo (−2 dB Trim)**. Jaycen counts 4–8 retain Mike #1 and slots 6–8, successively bypassing Mike #5 through #2 as the count falls. Counts 1–3 audition the first stages. New instances start with eight stages. Click NLSC to bypass Mike 2, then 3, then 4, then 5. The next click restores all eight. Disable AutoGain to hear the absolute output trim. Jaycen is the sole processor bank. Sessions saved with earlier banks reopen on Jaycen.
 
 Version 2 replaces the envelope-normalized Chebyshev exciter with a fixed-reference, biased soft saturation transfer. This is an original, reference-inspired model. Commercial NLS/HEAT equivalence has **not** been established by reference measurements.
 
