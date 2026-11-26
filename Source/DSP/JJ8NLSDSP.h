@@ -307,6 +307,11 @@ namespace jj8nls
                     st.wet.setTargetValue (slots[i].enabled && stageSelected (i) ? 1.0 : 0.0);
                     for (auto& f : st.filters) f.slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));
                 }
+            balanceLeft.reset (sampleRate, 0.030);
+            balanceRight.reset (sampleRate, 0.030);
+            updateStereoBalance();
+            balanceLeft.setCurrentAndTargetValue (balanceLeft.getTargetValue());
+            balanceRight.setCurrentAndTargetValue (balanceRight.getTargetValue());
             reset();
             updateAllStageFilters();
             updateGlobalFilters();
@@ -542,6 +547,8 @@ namespace jj8nls
 
             xL = outputDC[0].process (outputAir[0].process (deEmphasis[0].process (xL)));
             xR = outputDC[1].process (outputAir[1].process (deEmphasis[1].process (xR)));
+            xL *= balanceLeft.getNextValue();
+            xR *= balanceRight.getNextValue();
             if (std::abs (manualBalanceDb) > 1.0e-4)
             {
                 const double gL = std::pow (10.0, -0.5 * manualBalanceDb / 20.0);
@@ -711,10 +718,23 @@ namespace jj8nls
             bank.active = false;
         }
 #endif
+        juce::SmoothedValue<double> balanceLeft, balanceRight;
+        void updateStereoBalance() noexcept
+        {
+            // Right-minus-left gain at 1 kHz for each reference insert, in dB.
+            static constexpr double offset[] = { 0.22108834, 0.20673941, 0.20672668, 0.20673629, 0.20673474, -0.05122664, -0.05122664, -0.00932196 };
+            double db = 0.0;
+            if (currentConsoleVariant == 0)
+                for (int i = 0; i < kNumSlots; ++i)
+                    if (stageSelected (i) && slots[i].enabled) db += offset[i];
+            balanceLeft.setTargetValue (juce::Decibels::decibelsToGain (0.5 * db));
+            balanceRight.setTargetValue (juce::Decibels::decibelsToGain (-0.5 * db));
+        }
         bool wetTargetsDirty = false;
         void refreshWetTargets() noexcept
         {
             if (!wetTargetsDirty) return;
+            updateStereoBalance();
             for (int i = 0; i < kNumSlots; ++i)
             {
                 const double wet = slots[i].enabled && stageSelected (i) ? 1.0 : 0.0;

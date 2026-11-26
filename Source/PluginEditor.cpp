@@ -86,72 +86,23 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     const int curSkin   = audioProcessor.getSkinIndex();
     const int curOS     = audioProcessor.getOversamplingMode();
     const int curVar    = audioProcessor.getConsoleVariant();
-    const int curStages = audioProcessor.getActiveStages();
-    const bool isNoise  = audioProcessor.getAnalogNoiseEnabled();
-    const bool isLnk    = audioProcessor.isLinkedMode();
-
-    menu.addSectionHeader ("SUMMING CONSOLE - SKIN / THEME");
-    menu.addItem (1, "1. FL Studio (Dark Mixer UI)",        true, curSkin == flheat::kSkinFLStudio);
-    menu.addItem (2, "2. Pro Tools HEAT 1:1 (Original)",    true, curSkin == flheat::kSkinProTools);
-    menu.addItem (3, "3. Atari ST / Retro PC (GEM CRT)",    true, curSkin == flheat::kSkinAtariPC);
-    menu.addItem (4, "4. Ableton Live 12 (Rack Device)",    true, curSkin == flheat::kSkinAbletonLive);
-    menu.addItem (5, "5. Apple Logic Pro X (Space Grey)",   true, curSkin == flheat::kSkinLogicProX);
-    menu.addItem (6, "6. Steinberg Cubase 14 (MixConsole)", true, curSkin == flheat::kSkinCubase);
-
-    menu.addSeparator();
-    menu.addSectionHeader ("NLS CONSOLE STAGES (1x .. 8x CASCADE)");
-    for (int count = 1; count <= 8; ++count)
-    {
-        juce::String label = juce::String (count) + " stages";
-        if (curVar == 0 && count >= 4)
-            label += " (" + juce::String (count - 3) + " Mike + 2 Spike + Nevo)";
-        else
-            label += " (first " + juce::String (count) + ")";
-        menu.addItem (60 + count, label, true, curStages == count);
-    }
-
-    menu.addSeparator();
-    if (curVar == 0)
-    {
-        menu.addSectionHeader ("JAYCEN / MIKE INSERTS");
-        for (int i = 0; i < 4; ++i)
-            menu.addItem (101+i, "Mike " + juce::String (i+2) + " active", true,
-                          (audioProcessor.getMikeMask() & (1 << i)) != 0);
-        menu.addSeparator();
-    }
-    menu.addSectionHeader ("8x CONSOLE CHAIN VARIANT (Dual Mono)");
-    menu.addItem (40, "1. Jaycen Joshua 8x (Default: 5x EMI + 2x SSL + 1x Neve)", true, curVar == 0);
-    menu.addItem (41, "2. All SSL Spike 8x (Cleanest Sub / Open 17.5 kHz / Master & Vocals)", true, curVar == 1);
-    menu.addItem (42, "3. All Neve Nevo 8x (Warm Even Harmonics / Silky 15 kHz / Vocals & Synths)", true, curVar == 2);
-    menu.addItem (43, "4. All EMI Mike 8x (Transformer Punch / Controlled Sub)", true, curVar == 3);
-    menu.addItem (44, "5. FL HEAT Hybrid 8x (4x SSL + 4x Neve: +Drive Triode Pares / -Drive Console Impares)", true, curVar == 4);
-
-    menu.addSeparator();
-    menu.addSectionHeader ("OVERSAMPLING (Toda la cascada)");
-
-
-
-    menu.addItem (10, "0x (Nativo / Latencia cero / Menor CPU)", true, curOS == 0);
-    menu.addItem (12, "4x (Menor CPU)", true, curOS == 2);
-    menu.addItem (13, "8x (Calidad alta / Predeterminado)", true, curOS == 3);
-
-    menu.addSeparator();
-    menu.addSectionHeader ("ANALOG CONSOLE NOISE FLOOR (1/f PINK + 50 Hz HUM)");
-    menu.addItem (50, "Noise Floor: ON (Authentic -110 dBFS Analog Floor)", true,  isNoise);
-    menu.addItem (51, "Noise Floor: OFF (100% Silent Digital Black)",       true, !isNoise);
-
-    menu.addSeparator();
-    menu.addSectionHeader ("AUTOGAIN RMS ESTEREO (Ganancia enlazada)");
-    menu.addItem (20, "LNK / ON: AutoGain Activo (Compensa volumen de las 8 consolas)", true,  isLnk);
-    menu.addItem (21, "IND / OFF: Ganancia Bruta Original (Sin AutoGain)",              true, !isLnk);
-
-    menu.addSeparator();
-    menu.addSectionHeader ("UI SIZE (FL STUDIO SAFE)");
-    const int curW = getWidth();
-    menu.addItem (30, "Mini 70% (118 x 218 px)",            true, curW <= 122);
-    menu.addItem (31, "Compact 80% (130 x 240 px Default)", true, curW > 122 && curW <= 140);
-    menu.addItem (32, "Medium 90% (150 x 277 px)",          true, curW > 140 && curW <= 158);
-    menu.addItem (33, "Classic 100% (168 x 310 px)",        true, curW > 158);
+    juce::PopupMenu skins, quality, noise, mikes;
+    const char* names[] = { "FL Studio", "Pro Tools", "Atari ST", "Ableton Live", "Logic Pro", "Cubase" };
+    for (int i = 0; i < 6; ++i)
+        skins.addItem (i+1, names[i], true, curSkin == i);
+    quality.addItem (10, "0x / Zero latency", true, curOS == 0);
+    quality.addItem (12, "4x", true, curOS == 2);
+    quality.addItem (13, "8x", true, curOS == 3);
+    const bool enabled = audioProcessor.getAnalogNoiseEnabled();
+    noise.addItem (50, "On", true, enabled);
+    noise.addItem (51, "Off", true, !enabled);
+    for (int i = 0; i < 4; ++i)
+        mikes.addItem (101+i, "Mike " + juce::String (i+2), true,
+                       (audioProcessor.getMikeMask() & (1 << i)) != 0);
+    menu.addSubMenu ("Oversampling", quality);
+    menu.addSubMenu ("Skins", skins);
+    menu.addSubMenu ("Noise", noise);
+    menu.addSubMenu ("Active Mike inserts", mikes, curVar == 0);
 
     juce::Component::SafePointer<FLHeatAudioProcessorEditor> safeThis (this);
     menu.showMenuAsync (juce::PopupMenu::Options(), [safeThis] (int result)
@@ -172,42 +123,15 @@ void FLHeatAudioProcessorEditor::showContextMenu()
             safeThis->displayedOSMode = proc.getOversamplingMode();
             safeThis->repaint();
         }
-        else if (result == 20 || result == 21)
-        {
-            if (auto* p = proc.getAPVTS().getParameter (FLHeatAudioProcessor::kParamLink))
-                p->setValueNotifyingHost (result == 20 ? 1.0f : 0.0f);
-            safeThis->repaint();
-        }
-        else if (result >= 40 && result <= 44)
-        {
-            proc.setConsoleVariant (result - 40);
-            safeThis->repaint();
-        }
         else if (result >= 101 && result <= 104)
         {
             proc.toggleMike (result - 101);
             safeThis->displayedStages = proc.getActiveStages();
             safeThis->repaint();
         }
-        else if (result >= 61 && result <= 68)
-        {
-            proc.setActiveStages (result - 60);
-            safeThis->displayedStages = proc.getActiveStages();
-            safeThis->repaint();
-        }
         else if (result == 50 || result == 51)
         {
             proc.setAnalogNoiseEnabled (result == 50);
-            safeThis->repaint();
-        }
-        else if (result >= 30 && result <= 33)
-        {
-            static constexpr int kWidths[4]  = { 118, 130, 150, 168 };
-            static constexpr int kHeights[4] = { 218, 240, 277, 310 };
-            const int idx = result - 30;
-            proc.setSavedEditorSize (kWidths[idx], kHeights[idx]);
-            safeThis->setSize (kWidths[idx], kHeights[idx]);
-            safeThis->resized();
             safeThis->repaint();
         }
     });

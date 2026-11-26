@@ -1,4 +1,4 @@
-# Summing Console — PAPIELGUAPO 2.3.0
+# Summing Console — PAPIELGUAPO 2.3.1
 
 Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike (+0.5 dB Drive) → Mike → Mike → Mike → Mike → Spike → Spike → Nevo (−2 dB Trim)**. Jaycen counts 4–8 retain Mike #1 and slots 6–8, successively bypassing Mike #5 through #2 as the count falls. Counts 1–3 audition the first stages. The header cycles 8, 6 and 4 in Jaycen mode. Disable AutoGain to hear the absolute output trim. Alternative banks provide all-Spike, all-Nevo, all-Mike and alternating Spike/Nevo HEAT Hybrid character.
 
@@ -114,3 +114,5 @@ python Tests/analyse.py captures Measurements
 Copy the complete `Summing Console - Papielguapo.vst3` bundle to a VST3 folder scanned by your DAW. The Standalone `.exe` can run independently. Keep the bundle structure intact. A separate build directory preserves previous binaries; this repository does not install plugins into system folders automatically.
 
 The model and console names describe reference-inspired signal character. They do not imply affiliation, endorsement, or verified identity with Waves, Avid, Crane Song, SSL, EMI or Neve.
+
+Version 2.3.1 balances the Jaycen stereo output with fixed, opposite gain trims derived from each active insert at 1 kHz. The calibration follows the Mike switches with a 30 ms transition. The context menu contains Oversampling, Skins, Noise and Active Mike inserts.
