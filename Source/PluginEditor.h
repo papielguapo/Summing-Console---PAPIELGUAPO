@@ -32,7 +32,6 @@ public:
         setScrollWheelEnabled (true);
     }
 
-    std::function<bool()> isJaycen;
     std::function<void()> onRightClickMenu;
 
     void mouseDown (const juce::MouseEvent& e) override
@@ -60,39 +59,10 @@ public:
     juce::String getTooltip() override
     {
         const double v = getValue();
-        juce::String valStr = (std::abs (v) < 0.005)
-                                ? "0.0"
-                                : ((v > 0.0 ? "+" : "") + juce::String (v, 2));
-
-        if (isJaycen && isJaycen())
-        {
-            if (driveKnob)
-                return "Drive " + juce::String ((v + 10.0) * 5.0, 0) + "% | "
-                     + (v <= 0 ? "Mike 1: " + juce::String (0.05 * (v + 10.0), 2) + " dB" : "Bus Smash: Mike + Spike");
-            return v < 0 ? "Tight Sub / Dark" : v > 0 ? "Full Phat & Air" : "Jaycen: referencia";
-        }
         if (driveKnob)
-        {
-            juce::String character = "Jaycen Joshua 8x Default (+1.0)";
-            if (v > 1.05)
-                character = "Mas saturacion armonica H2..H16 en las 8 consolas";
-            else if (v >= 0.0)
-                character = "Calidez sutil calibrada en las 8 etapas";
-            else
-                character = "Consolas: menos armonicos (-10 limpio). HEAT: caracter impar bipolar.";
-
-            return name + " (Saturacion / Clean Punch 8x NLS): " + valStr
-                 + " [" + character + "] — Doble clic: 0.0 | Clic derecho: Menu";
-        }
-
-        juce::String subInfo = "Console: punch 40-60 Hz, subsonico 21 Hz, tolerancias L/R";
-        if (v > 0.05)
-            subInfo = "Weight & Warm: mas peso en graves y agudos suaves; dip sin profundizar";
-        else if (v < -0.05)
-            subInfo = "Open & Tight: sub controlado, dip 92 Hz hacia plano y agudos abiertos";
-
-        return name + " (Sub + Air, Dual Mono): " + valStr
-             + " [" + subInfo + "] — Doble clic: 0.0 | Clic derecho: Menu";
+            return "Drive " + juce::String ((v + 10.0) * 5.0, 0) + "% | "
+                 + (v <= 0 ? "Mike 1: " + juce::String (0.05 * (v + 10.0), 2) + " dB" : "Bus Smash: Mike + Spike");
+        return v < 0 ? "Tight Sub / Dark" : v > 0 ? "Full Phat & Air" : "Jaycen: referencia";
     }
 
 private:

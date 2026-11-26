@@ -139,14 +139,7 @@ void JJ8NLSAudioProcessor::syncParametersToEngine() noexcept
         for (auto& engine : dspEngines) engine.setAutoGainEnabled (curAG);
     }
 
-    const int curVar = getConsoleVariant();
-    if (curVar != lastConsoleVariant)
-    {
-        lastConsoleVariant = curVar;
-        for (auto& engine : dspEngines) engine.setConsoleVariant (curVar);
-    }
-
-    const int mask = curVar == 0 ? mikeMask.load() : -1;
+    const int mask = mikeMask.load();
     const int curStages = mask >= 0 ? 8 : getActiveStages();
     if (mask != lastMikeMask)
     {
@@ -186,7 +179,6 @@ void JJ8NLSAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     qualityMix.setCurrentAndTargetValue (1.0f);
     lastDriveVal       = -999.0;
     lastSubPunchVal    = -999.0;
-    lastConsoleVariant = -1;
     lastActiveStages   = -1;
     applyOversamplingConfiguration (getOversamplingMode());
     syncParametersToEngine();
@@ -277,7 +269,7 @@ void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         for (size_t n=0; n<high.getNumSamples(); ++n)
         {
             const double driveValue = drive.getNextValue();
-            if (engine.getConsoleVariant() != 0 || toneTick == 31) engine.setBipolarDrive (driveValue);
+            if (toneTick == 31) engine.setBipolarDrive (driveValue);
             const double tone = toneValue.getNextValue();
             // Coefficient designs run at a bounded control rate; filter coefficients
             // themselves slew continuously and preserve their delay states.
@@ -338,7 +330,6 @@ void JJ8NLSAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     auto state = apvts.copyState();
     state.setProperty ("skinIndex",          getSkinIndex(), nullptr);
     state.setProperty ("oversamplingMode",   getOversamplingMode(), nullptr);
-    state.setProperty ("consoleVariant",     getConsoleVariant(), nullptr);
     state.setProperty ("activeStages", activeStages.load(), nullptr);
     state.setProperty ("jaycenMikeMask", mikeMask.load(), nullptr);
     state.setProperty ("analogNoiseEnabled", getAnalogNoiseEnabled(), nullptr);
@@ -359,8 +350,7 @@ void JJ8NLSAudioProcessor::setStateInformation (const void* data, int sizeInByte
                 setSkinIndex (static_cast<int> (vt.getProperty ("skinIndex")));
             if (vt.hasProperty ("oversamplingMode"))
                 setOversamplingMode (static_cast<int> (vt.getProperty ("oversamplingMode")));
-            if (vt.hasProperty ("consoleVariant"))
-                setConsoleVariant (static_cast<int> (vt.getProperty ("consoleVariant")));
+            vt.removeProperty ("consoleVariant", nullptr);
             if (vt.hasProperty ("activeStages"))
                 setActiveStages (static_cast<int> (vt.getProperty ("activeStages")));
             mikeMask.store (juce::jlimit (-1, 15, static_cast<int> (vt.getProperty ("jaycenMikeMask", -1))));

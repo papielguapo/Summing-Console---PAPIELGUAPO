@@ -20,7 +20,6 @@ FLHeatAudioProcessorEditor::FLHeatAudioProcessorEditor (FLHeatAudioProcessor& p)
     linkAttachment   = std::make_unique<ButtonAttachment> (apvts, FLHeatAudioProcessor::kParamLink,   linkButton);
     bypassAttachment = std::make_unique<ButtonAttachment> (apvts, FLHeatAudioProcessor::kParamBypass, bypassButton);
 
-    driveKnob.isJaycen = toneKnob.isJaycen = [this]() { return audioProcessor.getConsoleVariant() == 0; };
     auto openContextMenuCallback = [this]()
     {
         showContextMenu();
@@ -85,7 +84,6 @@ void FLHeatAudioProcessorEditor::showContextMenu()
 
     const int curSkin   = audioProcessor.getSkinIndex();
     const int curOS     = audioProcessor.getOversamplingMode();
-    const int curVar    = audioProcessor.getConsoleVariant();
     juce::PopupMenu skins, quality, noise, mikes;
     const char* names[] = { "FL Studio", "Pro Tools", "Atari ST", "Ableton Live", "Logic Pro", "Cubase" };
     for (int i = 0; i < 6; ++i)
@@ -102,7 +100,7 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addSubMenu ("Oversampling", quality);
     menu.addSubMenu ("Skins", skins);
     menu.addSubMenu ("Noise", noise);
-    menu.addSubMenu ("Active Mike inserts", mikes, curVar == 0);
+    menu.addSubMenu ("Active Mike inserts", mikes);
 
     juce::Component::SafePointer<FLHeatAudioProcessorEditor> safeThis (this);
     menu.showMenuAsync (juce::PopupMenu::Options(), [safeThis] (int result)
@@ -215,7 +213,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
             else
             {
                 const int curSt = audioProcessor.getActiveStages();
-                const int nextSt = audioProcessor.getConsoleVariant() == 0 ? (curSt == 8 ? 6 : curSt == 6 ? 4 : 8) : (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
+                const int nextSt = curSt == 8 ? 6 : curSt == 6 ? 4 : 8;
                 audioProcessor.setActiveStages (nextSt);
                 displayedStages = nextSt;
             }
@@ -236,7 +234,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
             else
             {
                 const int curSt = audioProcessor.getActiveStages();
-                const int nextSt = audioProcessor.getConsoleVariant() == 0 ? (curSt == 8 ? 6 : curSt == 6 ? 4 : 8) : (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
+                const int nextSt = curSt == 8 ? 6 : curSt == 6 ? 4 : 8;
                 audioProcessor.setActiveStages (nextSt);
                 displayedStages = nextSt;
             }

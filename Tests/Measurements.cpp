@@ -95,7 +95,7 @@ void regressions()
         {
             parameter(p,"drive",iteration%2 ? 10.0f : -10.0f); parameter(p,"sub_punch",iteration%2 ? -10.0f : 10.0f);
             parameter(p,"autogain",iteration%2 ? 1.0f : 0.0f); parameter(p,"bypass",iteration%2 ? 0.0f : 1.0f);
-            p.setConsoleVariant(iteration%5); p.setActiveStages(1+iteration%8); p.setAnalogNoiseEnabled(iteration%2==0);
+            p.setActiveStages(1+iteration%8); p.setAnalogNoiseEnabled(iteration%2==0);
             for(int ch=0;ch<channels;++ch) for(int n=0;n<b.getNumSamples();++n) b.setSample(ch,n,0.2f*std::sin(static_cast<float>(n)*0.17f));
             measureAllocations=true; p.processBlock(b,midi); measureAllocations=false;
             bool finite=true;
@@ -177,7 +177,7 @@ void benchmark(const std::filesystem::path& out)
     for(int mode : {0,2,3}) for(double rate : {48000.0,96000.0}) for(int size : {256}) for(int setting : {0})
     {
         JJ8NLSAudioProcessor p; p.setOversamplingMode(mode); p.setAnalogNoiseEnabled(true); p.prepareToPlay(rate,size);
-        if(setting) { parameter(p,"drive",10); parameter(p,"sub_punch",10); p.setConsoleVariant(4); }
+        if(setting) { parameter(p,"drive",10); parameter(p,"sub_punch",10); }
         juce::AudioBuffer<float> b(2,size); juce::MidiBuffer midi;
         std::vector<double> timings; timings.reserve(300);
         const int warmBlocks=static_cast<int>(std::ceil(rate/static_cast<double>(size)));

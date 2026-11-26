@@ -60,13 +60,10 @@ public:
     int getActiveOversamplingMode() const noexcept { return runningOSMode.load (std::memory_order_relaxed); }
     void setOversamplingMode (int newOS) noexcept { oversamplingMode.store ((newOS <= 0 ? 0 : juce::jlimit (2, 3, newOS)), std::memory_order_relaxed); }
 
-    int getConsoleVariant() const noexcept { return consoleVariant.load (std::memory_order_relaxed); }
-    void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 4, newVar), std::memory_order_relaxed); }
-
     int getActiveStages() const noexcept
     {
         const int mask = mikeMask.load();
-        if (getConsoleVariant() == 0 && mask >= 0)
+        if (mask >= 0)
             return 4 + juce::countNumberOfBits (static_cast<juce::uint32> (mask));
         return activeStages.load();
     }
@@ -121,7 +118,6 @@ private:
     std::atomic<int> skinIndex        { flheat::kSkinFLStudio };
     std::atomic<int> oversamplingMode { 3 };
     std::atomic<int> runningOSMode { 3 };
-    std::atomic<int> consoleVariant   { 0 };
     std::atomic<int> activeStages     { 8 };
     std::atomic<bool> analogNoiseEnabled { true };
     std::atomic<int> savedEditorWidth  { 130 };
@@ -149,7 +145,6 @@ private:
     double lastDriveVal    = -999.0;
     double lastSubPunchVal = -999.0;
     bool lastAutoGainVal   = true;
-    int lastConsoleVariant = -1;
     std::atomic<int> mikeMask { -1 };
     int lastMikeMask = -2;
     int lastActiveStages   = -1;
