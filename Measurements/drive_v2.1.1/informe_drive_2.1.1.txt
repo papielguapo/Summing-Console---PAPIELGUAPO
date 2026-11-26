@@ -1,0 +1,37 @@
+SUMMING CONSOLE 2.1.1 / CORRECCION DE DRIVE
+Fecha: 2026-11-26
+
+CAUSA Y CAMBIO
+La ley anterior aumentaba la excitacion con abs(Drive) al girar en negativo, contrarrestando la reduccion de mezcla no lineal.
+Jaycen/SSL/Neve/EMI: mezcla no lineal = clamp(1 + Drive/10, 0, 1). Excitacion adicional solo para Drive positivo.
+A -10 la transferencia no lineal se omite: permanecen las curvas de impedancia, Tone, HP 21 Hz, DC 5 Hz y los controles opcionales de Noise/AutoGain.
+HEAT mantiene abs(Drive), su mezcla y bias bipolar originales; -10 de HEAT sigue generando armonicos impares por diseno.
+Suavizado, 0x/4x/8x, latencia, IDs de plugin y parametros conservados.
+
+METODO
+48 kHz / 8x IIR / 8 etapas / Tone 0 / seno 1 kHz a -18 dBFS RMS. Ruido y AutoGain OFF.
+1 s de calentamiento y 1 s de captura coherente. THD = suma H2-H16 / H1, expresada en dBc.
+La referencia conservada de v2.0 coincide con las leyes positivas y HEAT de v2.1 a Tone 0.
+
+RESULTADOS
+Variante | -10 | -8 | -5 | -2 | 0 | +1 | +5 | +10 (THD dBc)
+Jaycen | -146.07 | -79.13 | -71.18 | -67.10 | -65.16 | -63.90 | -59.53 | -55.17
+SSL Spike | -146.14 | -81.14 | -73.19 | -69.11 | -67.17 | -65.98 | -61.85 | -57.67
+Neve Nevo | -143.25 | -76.71 | -68.76 | -64.68 | -62.75 | -61.42 | -56.87 | -52.38
+EMI Mike | -149.29 | -78.91 | -70.95 | -66.88 | -64.94 | -63.68 | -59.32 | -54.97
+HEAT Hybrid | -55.39 | -58.10 | -62.78 | -68.50 | -70.66 | -68.55 | -61.45 | -54.59
+
+639 comprobaciones C++ y 35 criterios numericos correctos; cero fallos.
+Progresion de THD monotona comprobada en los cuatro modos de consola.
+Drive positivo y HEAT comparados con referencia, con tolerancia de 1e-7 por muestra.
+Error maximo de respuesta 20 Hz-20 kHz entre -10 limpio y +1 a bajo nivel: 0.000004755 dB.
+
+INTERPRETACION
+En -10, el residuo medido de -149 a -143 dBc procede del limite numerico/precision del render y la conversion de muestras; el archivo float tiene un piso de precision finito.
+Noise ON conserva ruido analogico y hum; AutoGain es un proceso de ganancia variable. Para observar el saturador aislado, medir con ambos OFF.
+-10 no es bypass: mantiene la curva tonal de consola. HEAT es la excepcion bipolar intencional.
+No se afirma equivalencia comercial 1:1 con NLS/HEAT.
+
+REPRODUCCION
+JJ8NLSMeasurements.exe <capturas> --drive-only
+python Tests/analyse_drive.py <capturas> <resultados>

@@ -199,6 +199,22 @@ int main(int argc,char** argv)
     if(argc>2 && std::string(argv[2])=="--bench") { benchmark(out); return 0; }
     regressions();
     if (argc>2 && std::string(argv[2])=="--regressions-only") return failures ? 1 : 0;
+    if (argc>2 && std::string(argv[2])=="--drive-only")
+    {
+        for (int variant=0; variant<5; ++variant)
+        {
+            const auto name=std::to_string(variant);
+            for (int drive : {-10,-8,-5,-2,0,1,5,10})
+                capture<jj8nls::JJ8NLSChainDSP>(out/("drive211_"+name+"_"+std::to_string(drive)+".f32"),3,variant,0,drive,"sine",0.17803894,1000);
+            for (int drive : {-10,-5,0,1,5,10})
+                if (variant==4 || drive>=0)
+                    capture<tone20::JJ8NLSChainDSP>(out/("drive_ref_"+name+"_"+std::to_string(drive)+".f32"),3,variant,0,drive,"sine",0.17803894,1000);
+            if (variant<4) for (int drive : {-10,1})
+                capture<jj8nls::JJ8NLSChainDSP>(out/("drive_fr_"+name+"_"+std::to_string(drive)+".f32"),3,variant,0,drive,"impulse",1.e-4,0);
+        }
+        std::cout << "FAILURES=" << failures << '\n';
+        return failures ? 1 : 0;
+    }
     if (argc>2 && std::string(argv[2])=="--tone-only")
     {
         for (int variant=0; variant<5; ++variant)

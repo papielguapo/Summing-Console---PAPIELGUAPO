@@ -396,7 +396,7 @@ namespace jj8nls
         {
             lastRawDrive = std::clamp (rawDrive, -10.0, 10.0);
             globalHarmonicScale = currentConsoleVariant == 4 ? 0.50 + 0.050 * std::abs (lastRawDrive)
-                                                          : std::clamp (1.0 + lastRawDrive * 0.07, 0.3, 1.0);
+                                                          : std::clamp (1.0 + lastRawDrive / 10.0, 0.0, 1.0);
             dynamicEvenBias = (currentConsoleVariant == 4 && lastRawDrive < 0.0) ? 0.3 : 1.0;
             harmonicMix.setTargetValue (globalHarmonicScale);
             biasMix.setTargetValue (dynamicEvenBias);
@@ -623,7 +623,13 @@ namespace jj8nls
         {
             juce::ignoreUnused (model, drive, stageRef);
             const double colour = st.modelAmount.getNextValue();
-            const double amount = (0.115 + 0.025 * colour) * (1.0 + 0.10 * std::abs (lastRawDrive));
+            const double mix = std::clamp (currentHarmonicMix, 0.0, 1.0);
+            // At -10 the console path is strictly linear: keep impedance filters,
+            // skip the nonlinear transfer. HEAT intentionally remains bipolar.
+            if (mix == 0.0) return s;
+            const double excitation = currentConsoleVariant == 4 ? std::abs (lastRawDrive)
+                                                                  : std::max (0.0, lastRawDrive);
+            const double amount = (0.115 + 0.025 * colour) * (1.0 + 0.10 * excitation);
             const double b = st.bias * currentBiasMix;
             if (b != st.cachedBias)
             {
@@ -633,7 +639,6 @@ namespace jj8nls
             const double tb = st.biasTanh;
             const double u = amount * s;
             const double soft = (std::tanh (u + b) - tb) / (amount * st.biasSlope);
-            const double mix = std::clamp (currentHarmonicMix, 0.0, 1.0);
             return s + mix * (soft - s);
         }
 

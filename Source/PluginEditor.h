@@ -71,7 +71,7 @@ public:
             else if (v >= 0.0)
                 character = "Calidez sutil calibrada en las 8 etapas";
             else
-                character = "Caracter de saturacion bipolar; HEAT negativo prioriza impares";
+                character = "Consolas: menos armonicos (-10 limpio). HEAT: caracter impar bipolar.";
 
             return name + " (Saturacion / Clean Punch 8x NLS): " + valStr
                  + " [" + character + "] — Doble clic: +1.0 | Clic derecho: Menu";
