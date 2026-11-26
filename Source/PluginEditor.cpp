@@ -20,6 +20,7 @@ FLHeatAudioProcessorEditor::FLHeatAudioProcessorEditor (FLHeatAudioProcessor& p)
     linkAttachment   = std::make_unique<ButtonAttachment> (apvts, FLHeatAudioProcessor::kParamLink,   linkButton);
     bypassAttachment = std::make_unique<ButtonAttachment> (apvts, FLHeatAudioProcessor::kParamBypass, bypassButton);
 
+    driveKnob.isJaycen = toneKnob.isJaycen = [this]() { return audioProcessor.getConsoleVariant() == 0; };
     auto openContextMenuCallback = [this]()
     {
         showContextMenu();
@@ -99,16 +100,25 @@ void FLHeatAudioProcessorEditor::showContextMenu()
 
     menu.addSeparator();
     menu.addSectionHeader ("NLS CONSOLE STAGES (1x .. 8x CASCADE)");
-    menu.addItem (61, "1x NLS Stage (1: Mike - Single Console)",          true, curStages == 1);
-    menu.addItem (62, "2x NLS Stages (1:Mike -> 2:Spike)",                true, curStages == 2);
-    menu.addItem (63, "3x NLS Stages (1..3 Cascade)",                     true, curStages == 3);
-    menu.addItem (64, "4x NLS Stages (Half Chain - Vocals / Synths)",     true, curStages == 4);
-    menu.addItem (65, "5x NLS Stages (1..5 Cascade)",                     true, curStages == 5);
-    menu.addItem (66, "6x NLS Stages (1..6 Cascade - Mix Bus)",           true, curStages == 6);
-    menu.addItem (67, "7x NLS Stages (1..7 Cascade)",                     true, curStages == 7);
-    menu.addItem (68, "8x NLS Stages (Default Full Jaycen Joshua Chain)", true, curStages == 8);
+    for (int count = 1; count <= 8; ++count)
+    {
+        juce::String label = juce::String (count) + " stages";
+        if (curVar == 0 && count >= 4)
+            label += " (" + juce::String (count - 3) + " Mike + 2 Spike + Nevo)";
+        else
+            label += " (first " + juce::String (count) + ")";
+        menu.addItem (60 + count, label, true, curStages == count);
+    }
 
     menu.addSeparator();
+    if (curVar == 0)
+    {
+        menu.addSectionHeader ("JAYCEN / MIKE INSERTS");
+        for (int i = 0; i < 4; ++i)
+            menu.addItem (101+i, "Mike " + juce::String (i+2) + " active", true,
+                          (audioProcessor.getMikeMask() & (1 << i)) != 0);
+        menu.addSeparator();
+    }
     menu.addSectionHeader ("8x CONSOLE CHAIN VARIANT (Dual Mono)");
     menu.addItem (40, "1. Jaycen Joshua 8x (Default: 5x EMI + 2x SSL + 1x Neve)", true, curVar == 0);
     menu.addItem (41, "2. All SSL Spike 8x (Cleanest Sub / Open 17.5 kHz / Master & Vocals)", true, curVar == 1);
@@ -171,6 +181,12 @@ void FLHeatAudioProcessorEditor::showContextMenu()
         else if (result >= 40 && result <= 44)
         {
             proc.setConsoleVariant (result - 40);
+            safeThis->repaint();
+        }
+        else if (result >= 101 && result <= 104)
+        {
+            proc.toggleMike (result - 101);
+            safeThis->displayedStages = proc.getActiveStages();
             safeThis->repaint();
         }
         else if (result >= 61 && result <= 68)
@@ -275,7 +291,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
             else
             {
                 const int curSt = audioProcessor.getActiveStages();
-                const int nextSt = (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
+                const int nextSt = audioProcessor.getConsoleVariant() == 0 ? (curSt == 8 ? 6 : curSt == 6 ? 4 : 8) : (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
                 audioProcessor.setActiveStages (nextSt);
                 displayedStages = nextSt;
             }
@@ -296,7 +312,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
             else
             {
                 const int curSt = audioProcessor.getActiveStages();
-                const int nextSt = (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
+                const int nextSt = audioProcessor.getConsoleVariant() == 0 ? (curSt == 8 ? 6 : curSt == 6 ? 4 : 8) : (curSt == 8) ? 4 : (curSt == 4 ? 2 : (curSt == 2 ? 1 : 8));
                 audioProcessor.setActiveStages (nextSt);
                 displayedStages = nextSt;
             }
@@ -319,14 +335,14 @@ void FLHeatAudioProcessorEditor::mouseDoubleClick (const juce::MouseEvent& event
     if (currentSkinStyle == flheat::kSkinProTools)
     {
         if (ptDriveLabelBounds.contains (logicalPos))
-            driveKnob.setValue (1.0, juce::sendNotificationSync);
+            driveKnob.setValue (0.0, juce::sendNotificationSync);
         else if (ptToneLabelBounds.contains (logicalPos))
             toneKnob.setValue (0.0, juce::sendNotificationSync);
     }
     else
     {
         if (driveReadoutBounds.contains (logicalPos))
-            driveKnob.setValue (1.0, juce::sendNotificationSync);
+            driveKnob.setValue (0.0, juce::sendNotificationSync);
         else if (toneReadoutBounds.contains (logicalPos))
             toneKnob.setValue (0.0, juce::sendNotificationSync);
     }

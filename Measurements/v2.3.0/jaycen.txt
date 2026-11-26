@@ -1,0 +1,286 @@
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS physical slot selection
+PASS bank gain recall
+PASS default uses all eight stages
+PASS noncontiguous Mike bypasses recalled
+PASS capture contains no gaps or nonfinite samples
+impulse4.f32 peak=4.77318e-05
+PASS capture contains no gaps or nonfinite samples
+sine4.f32 peak=0.155828
+PASS capture contains no gaps or nonfinite samples
+impulse5.f32 peak=4.82133e-05
+PASS capture contains no gaps or nonfinite samples
+sine5.f32 peak=0.161088
+PASS capture contains no gaps or nonfinite samples
+impulse6.f32 peak=5.18974e-05
+PASS capture contains no gaps or nonfinite samples
+sine6.f32 peak=0.166441
+PASS capture contains no gaps or nonfinite samples
+impulse7.f32 peak=5.57754e-05
+PASS capture contains no gaps or nonfinite samples
+sine7.f32 peak=0.171902
+PASS capture contains no gaps or nonfinite samples
+impulse8.f32 peak=5.98379e-05
+PASS capture contains no gaps or nonfinite samples
+sine8.f32 peak=0.177969
+PASS capture contains no gaps or nonfinite samples
+default-linked.f32 peak=0.150285
+PASS capture contains no gaps or nonfinite samples
+tone-10.f32 peak=5.46683e-05
+PASS capture contains no gaps or nonfinite samples
+tone0.f32 peak=5.98379e-05
+PASS capture contains no gaps or nonfinite samples
+tone10.f32 peak=6.52309e-05
+PASS capture contains no gaps or nonfinite samples
+drive-10ag0.f32 peak=0.717984
+PASS capture contains no gaps or nonfinite samples
+drive-10ag1.f32 peak=0.594069
+PASS capture contains no gaps or nonfinite samples
+drive0ag0.f32 peak=0.718146
+PASS capture contains no gaps or nonfinite samples
+drive0ag1.f32 peak=0.594049
+PASS capture contains no gaps or nonfinite samples
+drive5ag0.f32 peak=0.670013
+PASS capture contains no gaps or nonfinite samples
+drive5ag1.f32 peak=0.574688
+PASS capture contains no gaps or nonfinite samples
+drive10ag0.f32 peak=0.392799
+PASS capture contains no gaps or nonfinite samples
+drive10ag1.f32 peak=0.499037

@@ -10,7 +10,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout JJ8NLSAudioProcessor::create
         juce::ParameterID { kParamDrive, 1 },
         "Drive",
         juce::NormalisableRange<float> (-10.0f, 10.0f, 0.01f),
-        1.0f));
+        0.0f));
 
     // Tone: controlled transformer resonance, Tight Sub and paired pre/de-emphasis.
     layout.add (std::make_unique<juce::AudioParameterFloat> (
@@ -23,7 +23,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout JJ8NLSAudioProcessor::create
     layout.add (std::make_unique<juce::AudioParameterBool> (
         juce::ParameterID { kParamAutoGain, 1 },
         "AutoGain",
-        true));
+        false));
 
     // Clean Bypass: OFF (Active) by default
     layout.add (std::make_unique<juce::AudioParameterBool> (
@@ -55,7 +55,7 @@ JJ8NLSAudioProcessor::JJ8NLSAudioProcessor()
         engine.setAutoPeakRmsBalance (false);
         engine.setManualBalanceDb (0.0);
         engine.setOutputTrimDb (0.0);
-        engine.setBipolarDrive (1.0);
+        engine.setBipolarDrive (0.0);
     }
     syncParametersToEngine();
     startTimer (20);
@@ -146,7 +146,14 @@ void JJ8NLSAudioProcessor::syncParametersToEngine() noexcept
         for (auto& engine : dspEngines) engine.setConsoleVariant (curVar);
     }
 
-    const int curStages = getActiveStages();
+    const int mask = curVar == 0 ? mikeMask.load() : -1;
+    const int curStages = mask >= 0 ? 8 : getActiveStages();
+    if (mask != lastMikeMask)
+    {
+        for (auto& engine : dspEngines)
+            for (int i = 0; i < 4; ++i) engine.setSlotEnabled (i+1, mask < 0 || (mask & (1 << i)) != 0);
+        lastMikeMask = mask;
+    }
     if (curStages != lastActiveStages)
     {
         lastActiveStages = curStages;
@@ -269,7 +276,8 @@ void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         auto* right = channels == 2 ? high.getChannelPointer (1) : nullptr;
         for (size_t n=0; n<high.getNumSamples(); ++n)
         {
-            engine.setBipolarDrive (drive.getNextValue());
+            const double driveValue = drive.getNextValue();
+            if (engine.getConsoleVariant() != 0 || toneTick == 31) engine.setBipolarDrive (driveValue);
             const double tone = toneValue.getNextValue();
             // Coefficient designs run at a bounded control rate; filter coefficients
             // themselves slew continuously and preserve their delay states.
@@ -331,7 +339,8 @@ void JJ8NLSAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("skinIndex",          getSkinIndex(), nullptr);
     state.setProperty ("oversamplingMode",   getOversamplingMode(), nullptr);
     state.setProperty ("consoleVariant",     getConsoleVariant(), nullptr);
-    state.setProperty ("activeStages",       getActiveStages(), nullptr);
+    state.setProperty ("activeStages", activeStages.load(), nullptr);
+    state.setProperty ("jaycenMikeMask", mikeMask.load(), nullptr);
     state.setProperty ("analogNoiseEnabled", getAnalogNoiseEnabled(), nullptr);
     state.setProperty ("editorW",            getSavedEditorWidth(), nullptr);
     state.setProperty ("editorH",            getSavedEditorHeight(), nullptr);
@@ -354,6 +363,7 @@ void JJ8NLSAudioProcessor::setStateInformation (const void* data, int sizeInByte
                 setConsoleVariant (static_cast<int> (vt.getProperty ("consoleVariant")));
             if (vt.hasProperty ("activeStages"))
                 setActiveStages (static_cast<int> (vt.getProperty ("activeStages")));
+            mikeMask.store (juce::jlimit (-1, 15, static_cast<int> (vt.getProperty ("jaycenMikeMask", -1))));
             if (vt.hasProperty ("analogNoiseEnabled"))
                 setAnalogNoiseEnabled (static_cast<bool> (vt.getProperty ("analogNoiseEnabled")));
             if (vt.hasProperty ("editorW") && vt.hasProperty ("editorH"))

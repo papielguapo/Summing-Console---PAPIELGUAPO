@@ -35,11 +35,12 @@ void check(bool ok,const char* text) { std::cout << (ok ? "PASS " : "FAIL ") << 
 
 template<class Engine>
 void capture(const std::filesystem::path& path, int factor, int variant, double tone, double drive,
-             const std::string& signal, double amplitude, double frequency, bool ag=false)
+             const std::string& signal, double amplitude, double frequency, bool ag=false, int stages=8)
 {
     Engine engine;
     engine.setConsoleVariant(variant); engine.setBipolarTone(tone); engine.setBipolarDrive(drive);
     engine.setMasterNoiseEnabled(false); engine.setAutoPeakRmsBalance(false); engine.setAutoGainEnabled(ag);
+    engine.setActiveStageCount(stages);
     engine.prepare(fs * (1<<factor));
     juce::dsp::Oversampling<float> os(2,static_cast<size_t>(factor),juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,true,true);
     os.initProcessing(blockSize);
@@ -203,12 +204,13 @@ int main(int argc,char** argv)
     if(argc>2 && std::string(argv[2])=="--bench") { benchmark(out); return 0; }
     if (argc > 2 && std::string(argv[2]) == "--null")
     {
-        for (int channels : {1, 2}) for (int variant = 0; variant < 5; ++variant)
+        for (int channels : {1, 2}) for (int variant = 1; variant < 5; ++variant)
         {
             jj8nls::JJ8NLSChainDSP optimized;
             scalar220::JJ8NLSChainDSP reference;
             auto setup = [&](auto& engine) {
                 engine.setConsoleVariant(variant);
+                engine.setBipolarDrive(1.0);
                 engine.setMasterNoiseEnabled(false);
                 engine.prepare(384000);
             };
@@ -246,6 +248,62 @@ int main(int argc,char** argv)
             }
             check(identical, "scalar null with fixed controls and automated Drive/Tone/stages");
         }
+        return failures ? 1 : 0;
+    }
+    {
+        jj8nls::JJ8NLSChainDSP chain;
+        for (int bank : {0, 4, 0})
+        {
+            chain.setConsoleVariant(bank);
+            for (int count = 4; count <= 8; ++count)
+            {
+                chain.setActiveStageCount(count);
+                for (int i = 0; i < 8; ++i)
+                {
+                    const auto& slot = chain.getSlotConfig(i);
+                    const bool expected = bank == 0 ? (i < count-3 || i >= 5) : i < count;
+                    check(chain.stageSelected(i) == expected, "physical slot selection");
+                    check(slot.drive == (bank == 0 && i == 0 ? 0.5 : 0.0)
+                        && slot.trimDb == (bank == 0 && i == 7 ? -2.0 : 0.0), "bank gain recall");
+                }
+            }
+        }
+    }
+    if (argc > 2 && std::string(argv[2]) == "--jaycen")
+    {
+        JJ8NLSAudioProcessor p;
+        check(p.getActiveStages()==8 && p.getMikeMask()==15, "default uses all eight stages");
+        p.toggleMike(0); p.toggleMike(2);
+        juce::MemoryBlock state; p.getStateInformation(state);
+        JJ8NLSAudioProcessor restored;
+        restored.setStateInformation(state.getData(),static_cast<int>(state.getSize()));
+        check(restored.getActiveStages()==6 && restored.getMikeMask()==10, "noncontiguous Mike bypasses recalled");
+        constexpr int length = 96000;
+        juce::AudioBuffer<float> audio(2,256); juce::MidiBuffer midi;
+        p.setActiveStages(8); p.prepareToPlay(48000,256);
+        std::ofstream exact(out/"fresh-default.f32",std::ios::binary);
+        for (int offset=0; offset<length; offset+=256)
+        {
+            for (int i=0;i<256;++i) for (int ch=0;ch<2;++ch)
+                audio.setSample(ch,i,static_cast<float>(0.17803894*std::sin(2.0*jj8nls::kPi*1000.0*(offset+i)/48000.0)));
+            p.processBlock(audio,midi);
+            for (int i=0;i<256 && offset+i<length;++i) for (int ch=0;ch<2;++ch)
+            {
+                const float v=audio.getSample(ch,i); exact.write(reinterpret_cast<const char*>(&v),sizeof(v));
+            }
+        }
+        for (int stages = 4; stages <= 8; ++stages)
+        {
+            const auto name = std::to_string(stages);
+            capture<jj8nls::JJ8NLSChainDSP>(out/("impulse"+name+".f32"),3,0,0,0,"impulse",1.e-4,0,false,stages);
+            capture<jj8nls::JJ8NLSChainDSP>(out/("sine"+name+".f32"),3,0,0,0,"sine",0.17803894,1000,false,stages);
+        }
+        capture<jj8nls::JJ8NLSChainDSP>(out/"default-linked.f32",3,0,0,0,"sine",0.17803894,1000,true);
+        for (int tone : {-10,0,10})
+            capture<jj8nls::JJ8NLSChainDSP>(out/("tone"+std::to_string(tone)+".f32"),3,0,tone,0,"impulse",1.e-4,0);
+        for (int drive : {-10,0,5,10})
+            for (int ag : {0,1})
+                capture<jj8nls::JJ8NLSChainDSP>(out/("drive"+std::to_string(drive)+"ag"+std::to_string(ag)+".f32"),3,0,0,drive,"sine",0.70794578,1000,ag!=0);
         return failures ? 1 : 0;
     }
     regressions();

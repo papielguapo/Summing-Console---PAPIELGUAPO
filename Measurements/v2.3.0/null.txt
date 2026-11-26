@@ -1,0 +1,8 @@
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages
+PASS scalar null with fixed controls and automated Drive/Tone/stages

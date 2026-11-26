@@ -1,8 +1,10 @@
-# Summing Console — PAPIELGUAPO 2.2.0
+# Summing Console — PAPIELGUAPO 2.3.0
 
-Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike → Spike → Mike → Mike → Mike → Spike → Nevo → Mike**. Alternative banks provide all-Spike, all-Nevo, all-Mike and alternating Spike/Nevo HEAT Hybrid character.
+Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike (+0.5 dB Drive) → Mike → Mike → Mike → Mike → Spike → Spike → Nevo (−2 dB Trim)**. Jaycen counts 4–8 retain Mike #1 and slots 6–8, successively bypassing Mike #5 through #2 as the count falls. Counts 1–3 audition the first stages. The header cycles 8, 6 and 4 in Jaycen mode. Disable AutoGain to hear the absolute output trim. Alternative banks provide all-Spike, all-Nevo, all-Mike and alternating Spike/Nevo HEAT Hybrid character.
 
 Version 2 replaces the envelope-normalized Chebyshev exciter with a fixed-reference, biased soft saturation transfer. This is an original, reference-inspired model. Commercial NLS/HEAT equivalence has **not** been established by reference measurements.
+
+The independent Jaycen model uses per-slot, per-channel filter fits and nonlinear residuals measured from the local reference project. Waves binaries and preset chunks are not distributed. Right-click to toggle Mike 2–5 individually. Their bypass states are saved per session. AutoGain starts off to preserve the reference output level. See Measurements/v2.3.0/waves-vs-model.csv for residual errors. The Jaycen bank has its own Drive/Tone map in 2.3.0. Drive reads −10 to +10 in saved automation (0–100% travel). At minimum all eight stages retain their undriven nonlinear response. At midpoint Mike 1 has +0.5 dB excitation. At maximum Mike 1 reaches +2 dB, Mike 2–5 reach +9 dB and Spike 6–7 reach +6 dB, with sequential onsets. Nevo retains −2 dB output trim. Linked AutoGain follows that trimmed reference. At center the measured low-frequency response is preserved. Turning left progressively blends in a 20–32 Hz high-pass and darkens the top by up to 1.5 dB. Turning right retains the low-frequency voicing, applies up to 3 dB pre-emphasis before slot 6 with reciprocal de-emphasis after slot 8, and adds up to 3 dB of air with a 16 kHz shelf. Historical Tone and Drive descriptions below describe the earlier mapping and the other console banks.
 
 ## DSP architecture
 

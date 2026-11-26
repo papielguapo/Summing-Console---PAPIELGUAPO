@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include "JaycenCalibration.h"
 #include <cmath>
 #include <cstdint>
 #include <algorithm>
@@ -179,8 +180,10 @@ namespace jj8nls
     {
         std::array<BiquadSection, 5> filters;
         double tolerance = 1.0, bias = 0.0;
+        const double* referenceResidual = nullptr;
+        double referenceInputScale = 1.0;
         double cachedBias = 999.0, biasTanh = 0.0, biasSlope = 1.0;
-        juce::SmoothedValue<double> modelAmount, wet;
+        juce::SmoothedValue<double> modelAmount, wet, driveGain, trimGain;
 
         double pinkB0 = 0.0;
         double pinkB1 = 0.0;
@@ -208,23 +211,11 @@ namespace jj8nls
 
         void applyDefaultJaycenJoshuaChain() noexcept
         {
-            static constexpr ConsoleModel kJJModels[kNumSlots] =
-            {
-                ConsoleModel::Mike,
-                ConsoleModel::Spike,
-                ConsoleModel::Mike,
-                ConsoleModel::Mike,
-                ConsoleModel::Mike,
-                ConsoleModel::Spike,
-                ConsoleModel::Nevo,
-                ConsoleModel::Mike
-            };
-
             for (int i = 0; i < kNumSlots; ++i)
             {
-                slots[static_cast<size_t> (i)].model   = kJJModels[i];
-                slots[static_cast<size_t> (i)].drive   = (i == 0) ? 1.0 : 0.0;
-                slots[static_cast<size_t> (i)].trimDb  = 0.0;
+                slots[static_cast<size_t> (i)].model   = jaycenModels[i];
+                slots[static_cast<size_t> (i)].drive   = (i == 0) ? 0.5 : 0.0;
+                slots[static_cast<size_t> (i)].trimDb  = i == 7 ? -2.0 : 0.0;
                 slots[static_cast<size_t> (i)].noiseOn = (i != 0);
                 slots[static_cast<size_t> (i)].enabled = true;
             }
@@ -242,19 +233,8 @@ namespace jj8nls
             currentConsoleVariant = clamped;
             if (clamped == 0)
             {
-                static constexpr ConsoleModel kJJModels[kNumSlots] =
-                {
-                    ConsoleModel::Mike,
-                    ConsoleModel::Spike,
-                    ConsoleModel::Mike,
-                    ConsoleModel::Mike,
-                    ConsoleModel::Mike,
-                    ConsoleModel::Spike,
-                    ConsoleModel::Nevo,
-                    ConsoleModel::Mike
-                };
                 for (int i = 0; i < kNumSlots; ++i)
-                    slots[static_cast<size_t> (i)].model = kJJModels[i];
+                    slots[static_cast<size_t> (i)].model = jaycenModels[i];
             }
             else if (clamped == 4)
             {
@@ -281,6 +261,13 @@ namespace jj8nls
                     slots[static_cast<size_t> (i)].model = targetModel;
             }
 
+            for (int i = 0; i < kNumSlots; ++i)
+            {
+                setSlotDrive (i, clamped == 0 && i == 0 ? 0.5 : 0.0);
+                setSlotTrimDb (i, clamped == 0 && i == 7 ? -2.0 : 0.0);
+            }
+            wetTargetsDirty = true;
+            jaycenDriveApplied = false;
             setBipolarDrive (lastRawDrive);
             const double tone = lastRawTone; lastRawTone = -999.0;
             setBipolarTone (tone);
@@ -306,12 +293,18 @@ namespace jj8nls
                     auto& st = stageStates[ch][i];
                     const double unit = static_cast<double> ((i * 37 + ch * 53 + 11) % 101) / 100.0;
                     st.tolerance = 1.0 + ((i + ch) % 2 ? -1.0 : 1.0) * (0.010 + 0.005 * unit);
+                    st.referenceResidual = jaycenResidual[i][ch];
+                    st.referenceInputScale = i == 0 ? juce::Decibels::decibelsToGain (-0.5) : 1.0;
                     st.bias = 0.0025 + 0.003 * unit;
                     st.modelAmount.reset (sampleRate, 0.030);
                     st.modelAmount.setCurrentAndTargetValue (static_cast<double> (slots[i].model));
+                    st.driveGain.reset (sampleRate, 0.030);
+                    st.trimGain.reset (sampleRate, 0.030);
+                    st.driveGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (slots[i].drive));
+                    st.trimGain.setCurrentAndTargetValue (juce::Decibels::decibelsToGain (slots[i].trimDb));
                     st.wet.reset (sampleRate, 0.030);
-                    st.wet.setCurrentAndTargetValue (i < activeStageCount ? 1.0 : 0.0);
-                    st.wet.setTargetValue (slots[i].enabled && i < activeStageCount ? 1.0 : 0.0);
+                    st.wet.setCurrentAndTargetValue (stageSelected (i) ? 1.0 : 0.0);
+                    st.wet.setTargetValue (slots[i].enabled && stageSelected (i) ? 1.0 : 0.0);
                     for (auto& f : st.filters) f.slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));
                 }
             reset();
@@ -375,7 +368,7 @@ namespace jj8nls
             if (std::abs (tone-lastRawTone) < 1.0e-7) return;
             lastRawTone = tone;
             // Left: uniform/open; right: weight/warmth. Center retains the v2.0 voicing.
-            subBumpScale = tone < 0.0 ? 1.0+tone/10.0 : 1.0;
+            subBumpScale = currentConsoleVariant == 0 ? 1.0 : tone < 0.0 ? 1.0+tone/10.0 : 1.0;
             if (currentConsoleVariant == 4) subBumpScale *= 0.60;
             updateAllStageFilters();
         }
@@ -388,6 +381,8 @@ namespace jj8nls
             auto& cur = slots[static_cast<size_t> (index)];
             const bool modelChanged = (cur.model != cfg.model);
             cur = cfg;
+            setSlotDrive (index, cfg.drive);
+            setSlotTrimDb (index, cfg.trimDb);
             wetTargetsDirty = true;
             if (modelChanged)
                 updateStageFilter (index);
@@ -401,13 +396,33 @@ namespace jj8nls
         void setSlotDrive (int index, double driveVal) noexcept
         {
             if (index >= 0 && index < kNumSlots)
-                slots[static_cast<size_t> (index)].drive = std::clamp (driveVal, 0.0, 12.0);
+            {
+                auto& value = slots[index].drive;
+                value = std::clamp (driveVal, 0.0, 12.0);
+                const double gain = juce::Decibels::decibelsToGain (value);
+                for (auto& channel : stageStates) channel[index].driveGain.setTargetValue (gain);
+            }
         }
 
         void setBipolarDrive (double rawDrive) noexcept
         {
             lastRawDrive = std::clamp (rawDrive, -10.0, 10.0);
-            globalHarmonicScale = currentConsoleVariant == 4 ? 0.50 + 0.050 * std::abs (lastRawDrive)
+            if (currentConsoleVariant == 0)
+            {
+                if (jaycenDriveApplied && lastJaycenDrive == lastRawDrive) return;
+                lastJaycenDrive = lastRawDrive;
+                jaycenDriveApplied = true;
+                const double push = std::max (0.0, lastRawDrive / 10.0);
+                setSlotDrive (0, lastRawDrive <= 0.0 ? 0.05 * (lastRawDrive + 10.0) : 0.5 + 1.5 * push);
+                for (int i = 1; i <= 6; ++i)
+                {
+                    const double onset = 0.10 * (i - 1);
+                    const double fraction = std::max (0.0, (push - onset) / (1.0 - onset));
+                    setSlotDrive (i, (i < 5 ? 9.0 : 6.0) * fraction);
+                }
+                globalHarmonicScale = 1.0;
+            }
+            else globalHarmonicScale = currentConsoleVariant == 4 ? 0.50 + 0.050 * std::abs (lastRawDrive)
                                                           : std::clamp (1.0 + lastRawDrive / 10.0, 0.0, 1.0);
             dynamicEvenBias = (currentConsoleVariant == 4 && lastRawDrive < 0.0) ? 0.3 : 1.0;
             harmonicMix.setTargetValue (globalHarmonicScale);
@@ -435,7 +450,12 @@ namespace jj8nls
         void setSlotTrimDb (int index, double trimDb) noexcept
         {
             if (index >= 0 && index < kNumSlots)
-                slots[static_cast<size_t> (index)].trimDb = std::clamp (trimDb, -12.0, 12.0);
+            {
+                auto& value = slots[index].trimDb;
+                value = std::clamp (trimDb, -12.0, 12.0);
+                const double gain = juce::Decibels::decibelsToGain (value);
+                for (auto& channel : stageStates) channel[index].trimGain.setTargetValue (gain);
+            }
         }
 
         void setSlotEnabled (int index, bool en) noexcept
@@ -473,8 +493,10 @@ namespace jj8nls
             currentHarmonicMix = harmonicMix.getNextValue(); currentBiasMix = biasMix.getNextValue();
             const double inPower = 0.5 * (xL * xL + xR * xR);
 
-            xL = preEmphasis[0].process (subsonic[0].process (xL));
-            xR = preEmphasis[1].process (subsonic[1].process (xR));
+            xL = subsonic[0].process (xL);
+            if (currentConsoleVariant != 0) xL = preEmphasis[0].process (xL);
+            xR = subsonic[1].process (xR);
+            if (currentConsoleVariant != 0) xR = preEmphasis[1].process (xR);
             double stageRefL = 0.17803894;
             double stageRefR = 0.17803894;
 
@@ -490,6 +512,11 @@ namespace jj8nls
             for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
             {
                 const auto& cfg = slots[static_cast<size_t> (slotIdx)];
+                if (currentConsoleVariant == 0 && slotIdx == 5)
+                {
+                    xL = preEmphasis[0].process (xL);
+                    xR = preEmphasis[1].process (xR);
+                }
 
 #if JJ8NLS_STEREO_SSE2
                 auto& pair = stereoBanks[slotIdx];
@@ -531,7 +558,9 @@ namespace jj8nls
 
                 if (inRmsEnv > 1.0e-6 && outRmsEnv > 1.0e-6)
                 {
-                    const double ratio = std::sqrt (inRmsEnv / outRmsEnv);
+                    const double trimReference = currentConsoleVariant == 0 ? stageStates[0][7].trimGain.getCurrentValue() : 1.0;
+                    const double wetTrim = 1.0 + stageStates[0][7].wet.getCurrentValue() * (trimReference - 1.0);
+                    const double ratio = wetTrim * std::sqrt (inRmsEnv / outRmsEnv);
                     const double targetGain = std::clamp (ratio, 0.2511886, 3.9810717);
                     autoGainLinear += autoGainSmoothCoeff * (targetGain - autoGainLinear);
                 }
@@ -560,7 +589,8 @@ namespace jj8nls
             currentHarmonicMix = harmonicMix.getNextValue(); currentBiasMix = biasMix.getNextValue();
             const double inPower = x * x;
 
-            x = preEmphasis[0].process (subsonic[0].process (x));
+            x = subsonic[0].process (x);
+            if (currentConsoleVariant != 0) x = preEmphasis[0].process (x);
             double stageRef = 0.17803894;
 
             const double inc50  = 2.0 * kPi * 50.0 / sampleRate;
@@ -575,6 +605,7 @@ namespace jj8nls
             for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
             {
                 const auto& cfg = slots[static_cast<size_t> (slotIdx)];
+                if (currentConsoleVariant == 0 && slotIdx == 5) x = preEmphasis[0].process (x);
 
 #if JJ8NLS_STEREO_SSE2
                 flushStereoBank (slotIdx);
@@ -591,7 +622,9 @@ namespace jj8nls
 
                 if (inRmsEnv > 1.0e-6 && outRmsEnv > 1.0e-6)
                 {
-                    const double ratio = std::sqrt (inRmsEnv / outRmsEnv);
+                    const double trimReference = currentConsoleVariant == 0 ? stageStates[0][7].trimGain.getCurrentValue() : 1.0;
+                    const double wetTrim = 1.0 + stageStates[0][7].wet.getCurrentValue() * (trimReference - 1.0);
+                    const double ratio = wetTrim * std::sqrt (inRmsEnv / outRmsEnv);
                     const double targetGain = std::clamp (ratio, 0.2511886, 3.9810717);
                     autoGainLinear += autoGainSmoothCoeff * (targetGain - autoGainLinear);
                 }
@@ -607,7 +640,20 @@ namespace jj8nls
             sample = static_cast<float> (x);
         }
 
+    public:
+        bool stageSelected (int index) const noexcept
+        {
+            if (index < 0 || index >= kNumSlots) return false;
+            if (currentConsoleVariant == 0 && activeStageCount >= 4)
+                return index == 0 || index >= 5 || index <= activeStageCount - 4;
+            return index < activeStageCount;
+        }
+
     private:
+        static constexpr std::array<ConsoleModel, kNumSlots> jaycenModels {
+            ConsoleModel::Mike, ConsoleModel::Mike, ConsoleModel::Mike, ConsoleModel::Mike,
+            ConsoleModel::Mike, ConsoleModel::Spike, ConsoleModel::Spike, ConsoleModel::Nevo
+        };
         inline double nextWhiteNoise() noexcept
         {
             rngState ^= rngState >> 12;
@@ -671,7 +717,7 @@ namespace jj8nls
             if (!wetTargetsDirty) return;
             for (int i = 0; i < kNumSlots; ++i)
             {
-                const double wet = slots[i].enabled && i < activeStageCount ? 1.0 : 0.0;
+                const double wet = slots[i].enabled && stageSelected (i) ? 1.0 : 0.0;
                 for (auto& channel : stageStates) channel[i].wet.setTargetValue (wet);
             }
             wetTargetsDirty = false;
@@ -709,12 +755,7 @@ namespace jj8nls
                 y += currentNoiseMix * (pink + white + humSample * 0.35);
             }
 
-            if (std::abs (cfg.trimDb) > 1.0e-4)
-            {
-                const double trimLin = std::pow (10.0, cfg.trimDb / 20.0);
-                y *= trimLin;
-                stageRef *= trimLin;
-            }
+            y *= st.trimGain.getNextValue();
 
             return x + st.wet.getNextValue() * (y - x);
         }
@@ -730,10 +771,24 @@ namespace jj8nls
             const double mix = std::clamp (currentHarmonicMix, 0.0, 1.0);
             // At -10 the console path is strictly linear: keep impedance filters,
             // skip the nonlinear transfer. HEAT intentionally remains bipolar.
+            const double slotDriveGain = st.driveGain.getNextValue();
+            if (currentConsoleVariant == 0)
+            {
+                const double driveGain = slotDriveGain * st.referenceInputScale;
+                const double driven = s * driveGain;
+                const double pos = (std::clamp (driven, -1.0, 1.0) + 1.0) * 256.0;
+                const int i = std::min (511, static_cast<int> (pos));
+                const auto* table = st.referenceResidual;
+                const double delta = table[i] + (pos-i) * (table[i+1]-table[i]);
+                // Smooth limiting past the measured +/-1 input range.
+                const double excess = std::max (0.0, std::abs (driven) - 1.0);
+                const double tail = std::copysign (excess * excess / (1.0 + excess), driven);
+                return s + (delta - tail) / driveGain;
+            }
             if (mix == 0.0) return s;
-            const double excitation = currentConsoleVariant == 4 ? std::abs (lastRawDrive)
+            const double excitation = currentConsoleVariant == 0 ? 0.0 : currentConsoleVariant == 4 ? std::abs (lastRawDrive)
                                                                   : std::max (0.0, lastRawDrive);
-            const double amount = (0.115 + 0.025 * colour) * (1.0 + 0.10 * excitation);
+            const double amount = (0.115 + 0.025 * colour) * (1.0 + 0.10 * excitation) * slotDriveGain;
             const double b = st.bias * currentBiasMix;
             if (b != st.cachedBias)
             {
@@ -752,20 +807,27 @@ namespace jj8nls
             const double opening = std::max (0.0, -t);
             const double weight = std::max (0.0, t);
             // Audible balance is independent of the reciprocal saturation-emphasis pair.
-            const double airDb = (1.25 * opening - 1.75 * weight) * (0.65 + 0.35 * std::abs (t));
+            const bool jaycen = currentConsoleVariant == 0;
+            const double airDb = jaycen ? 3.0 * weight - 1.5 * opening : (1.25 * opening - 1.75 * weight) * (0.65 + 0.35 * std::abs (t));
             for (int ch=0; ch<2; ++ch)
             {
                 const double slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));
                 for (auto* f : { &subsonic[ch], &outputDC[ch], &preEmphasis[ch], &deEmphasis[ch], &outputAir[ch] }) f->slew = slew;
-                subsonic[ch].setTarget (BiquadSection::makeFirstOrderHighPass (21.0, sampleRate));
-                outputDC[ch].setTarget (BiquadSection::makeFirstOrderHighPass (5.0, sampleRate));
-                const auto pre = BiquadSection::makeHighShelf (4500.0, 0.70710678, -2.0 * t, sampleRate);
+                auto hp = BiquadSection::makeFirstOrderHighPass (jaycen ? 20.0 + 12.0 * opening : 21.0, sampleRate);
+                if (jaycen)
+                {
+                    hp.b0 = 1.0 + opening * (hp.b0 - 1.0);
+                    hp.b1 = hp.a1 + opening * (hp.b1 - hp.a1);
+                }
+                subsonic[ch].setTarget (hp);
+                outputDC[ch].setTarget (jaycen ? BiquadSection{} : BiquadSection::makeFirstOrderHighPass (5.0, sampleRate));
+                const auto pre = BiquadSection::makeHighShelf (4500.0, 0.70710678, jaycen ? 3.0 * weight : -2.0 * t, sampleRate);
                 preEmphasis[ch].setTarget (pre);
                 BiquadSection inverse;
                 inverse.b0=1.0/pre.b0; inverse.b1=pre.a1/pre.b0; inverse.b2=pre.a2/pre.b0;
                 inverse.a1=pre.b1/pre.b0; inverse.a2=pre.b2/pre.b0;
                 deEmphasis[ch].setTarget (inverse);
-                outputAir[ch].setTarget (BiquadSection::makeHighShelf (t < 0.0 ? 6000.0 : 8000.0, 0.70710678, airDb, sampleRate));
+                outputAir[ch].setTarget (BiquadSection::makeHighShelf (jaycen ? (t < 0.0 ? 8000.0 : 16000.0) : (t < 0.0 ? 6000.0 : 8000.0), 0.70710678, airDb, sampleRate));
             }
         }
 
@@ -792,9 +854,28 @@ namespace jj8nls
             {
                 auto& st = stageStates[ch][index];
                 st.modelAmount.setTargetValue (static_cast<double> (model));
+                if (currentConsoleVariant == 0)
+                {
+                    const double rate = 2.0 * sampleRate;
+                    for (int n = 0; n < 5; ++n)
+                    {
+                        const auto& section = jaycenSections[index][ch][n];
+                        const double r2 = rate * rate;
+                        const double den = r2 + section[2]*rate + section[3];
+                        BiquadSection filter;
+                        filter.b0 = section[4]*(r2 + section[0]*rate + section[1])/den;
+                        filter.b1 = section[4]*2.0*(section[1]-r2)/den;
+                        filter.b2 = section[4]*(r2 - section[0]*rate + section[1])/den;
+                        filter.a1 = 2.0*(section[3]-r2)/den;
+                        filter.a2 = (r2-section[2]*rate+section[3])/den;
+                        st.filters[n].setTarget (filter);
+                    }
+                }
+                else
+                {
                 const double t = st.tolerance;
-                const double opening = std::max (0.0, -lastRawTone / 10.0);
-                const double weight = std::max (0.0, lastRawTone / 10.0);
+                const double opening = currentConsoleVariant == 0 ? 0.0 : std::max (0.0, -lastRawTone / 10.0);
+                const double weight = currentConsoleVariant == 0 ? 0.0 : std::max (0.0, lastRawTone / 10.0);
                 const double punchScale = 1.0 - 0.35 * opening + 0.20 * weight;
                 const double dipScale = 1.0 - opening;
                 const double rolloffScale = 1.0 - opening;
@@ -803,6 +884,7 @@ namespace jj8nls
                 st.filters[2].setTarget (BiquadSection::makePeaking (52.8*t, 2.0, c.punch*punchScale, sampleRate));
                 st.filters[3].setTarget (BiquadSection::makePeaking (92.0*t, 1.4, c.dip*dipScale, sampleRate));
                 st.filters[4].setTarget (BiquadSection::makeHighShelf (c.airHz*t, 0.65, c.air*rolloffScale, sampleRate));
+                }
 #if JJ8NLS_STEREO_SSE2
                 for (const auto& f : st.filters)
                     stereoBanks[index].moving = std::max (stereoBanks[index].moving, f.coefficientsMoving);
@@ -821,7 +903,9 @@ namespace jj8nls
         StereoBalanceMode balanceMode = StereoBalanceMode::SubAndMidLocked;
         int currentConsoleVariant = 0;
         int activeStageCount     = kNumSlots;
-        double lastRawDrive      = 1.0;
+        bool jaycenDriveApplied = false;
+        double lastJaycenDrive = 0.0;
+        double lastRawDrive      = 0.0;
         double lastRawTone       = 0.0;
         double subBumpScale      = 1.0;
         double globalHarmonicScale = 1.0;

@@ -63,8 +63,24 @@ public:
     int getConsoleVariant() const noexcept { return consoleVariant.load (std::memory_order_relaxed); }
     void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 4, newVar), std::memory_order_relaxed); }
 
-    int getActiveStages() const noexcept { return activeStages.load (std::memory_order_relaxed); }
-    void setActiveStages (int n) noexcept { activeStages.store (juce::jlimit (1, 8, n), std::memory_order_relaxed); }
+    int getActiveStages() const noexcept
+    {
+        const int mask = mikeMask.load();
+        if (getConsoleVariant() == 0 && mask >= 0)
+            return 4 + juce::countNumberOfBits (static_cast<juce::uint32> (mask));
+        return activeStages.load();
+    }
+    int getMikeMask() const noexcept
+    {
+        const int custom = mikeMask.load();
+        return custom >= 0 ? custom : (1 << juce::jlimit (0, 4, activeStages.load() - 4)) - 1;
+    }
+    void toggleMike (int index) noexcept
+    {
+        if (juce::isPositiveAndBelow (index, 4))
+            mikeMask.store (getMikeMask() ^ (1 << index));
+    }
+    void setActiveStages (int n) noexcept { activeStages.store (juce::jlimit (1, 8, n), std::memory_order_relaxed); mikeMask.store (-1); }
 
     bool getAnalogNoiseEnabled() const noexcept { return analogNoiseEnabled.load (std::memory_order_relaxed); }
     void setAnalogNoiseEnabled (bool en) noexcept { analogNoiseEnabled.store (en, std::memory_order_relaxed); }
@@ -134,6 +150,8 @@ private:
     double lastSubPunchVal = -999.0;
     bool lastAutoGainVal   = true;
     int lastConsoleVariant = -1;
+    std::atomic<int> mikeMask { -1 };
+    int lastMikeMask = -2;
     int lastActiveStages   = -1;
     bool lastNoiseEnabled  = true;
 
