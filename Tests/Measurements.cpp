@@ -1,0 +1,175 @@
+#include "PluginProcessor.h"
+#include <juce_dsp/juce_dsp.h>
+#define jj8nls legacy8
+#include "LegacyDSP.h"
+#undef jj8nls
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <new>
+#include <atomic>
+#include <limits>
+#include <chrono>
+#include <iomanip>
+static std::atomic<size_t> allocations {0};
+static thread_local bool measureAllocations = false;
+void* operator new (size_t n) { if (measureAllocations) ++allocations; if (void* p=std::malloc(n ? n : 1)) return p; throw std::bad_alloc(); }
+void* operator new[] (size_t n) { return ::operator new(n); }
+void operator delete (void* p) noexcept { std::free(p); }
+void operator delete[] (void* p) noexcept { std::free(p); }
+void operator delete (void* p, size_t) noexcept { std::free(p); }
+void operator delete[] (void* p, size_t) noexcept { std::free(p); }
+constexpr double fs = 48000.0;
+constexpr int blockSize = 256;
+int failures=0;
+void check(bool ok,const char* text) { std::cout << (ok ? "PASS " : "FAIL ") << text << '\n'; if(!ok) ++failures; }
+
+template<class Engine>
+void capture(const std::filesystem::path& path, int factor, int variant, double tone, double drive,
+             const std::string& signal, double amplitude, double frequency, bool ag=false)
+{
+    Engine engine;
+    engine.setConsoleVariant(variant); engine.setBipolarTone(tone); engine.setBipolarDrive(drive);
+    engine.setMasterNoiseEnabled(false); engine.setAutoPeakRmsBalance(false); engine.setAutoGainEnabled(ag);
+    engine.prepare(fs * (1<<factor));
+    juce::dsp::Oversampling<float> os(2,static_cast<size_t>(factor),juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,true,true);
+    os.initProcessing(blockSize);
+    juce::AudioBuffer<float> buffer(2,blockSize);
+    const int length = signal=="impulse" ? 96000 : 48000;
+    const int warm = signal=="impulse" ? 0 : 48000;
+    std::vector<float> result(static_cast<size_t>(length)*2,std::numeric_limits<float>::quiet_NaN());
+    double maxValue=0;
+    for(int offset=-warm; offset<length;)
+    {
+        int count=std::min(blockSize,length-offset);
+        if(offset<0) count=std::min(count,-offset);
+        for(int n=0;n<count;++n)
+        {
+            const int i=offset+n;
+            float x=signal=="impulse" ? (i==0 ? static_cast<float>(amplitude) : 0.0f)
+                                      : static_cast<float>(amplitude*std::sin(2.0*jj8nls::kPi*frequency*i/fs));
+            buffer.setSample(0,n,x); buffer.setSample(1,n,x);
+        }
+        juce::dsp::AudioBlock<float> all(buffer); auto base=all.getSubBlock(0,static_cast<size_t>(count));
+        auto high=os.processSamplesUp(base);
+        for(size_t n=0;n<high.getNumSamples();++n) engine.processSampleStereo(high.getChannelPointer(0)[n],high.getChannelPointer(1)[n]);
+        os.processSamplesDown(base);
+        if(offset>=0) for(int n=0;n<count;++n) for(int ch=0;ch<2;++ch)
+        {
+            const float y=buffer.getSample(ch,n);
+            if(!std::isfinite(y)) ++failures;
+            maxValue=std::max(maxValue,std::abs(static_cast<double>(y)));
+            result[static_cast<size_t>(offset+n)*2+ch]=y;
+        }
+        offset += count;
+    }
+    check(std::all_of(result.begin(),result.end(),[](float x){return std::isfinite(x);}),"capture contains no gaps or nonfinite samples");
+    std::ofstream file(path,std::ios::binary); file.write(reinterpret_cast<const char*>(result.data()),static_cast<std::streamsize>(result.size()*sizeof(float)));
+    std::cout << path.filename().string() << " peak=" << maxValue << '\n';
+}
+void parameter(JJ8NLSAudioProcessor& p,const char* id,float value)
+{ auto* par=p.getAPVTS().getParameter(id); par->setValueNotifyingHost(par->convertTo0to1(value)); }
+void regressions()
+{
+    for(double rate : {44100.0,48000.0,96000.0,192000.0}) for(int channels : {1,2})
+    {
+        JJ8NLSAudioProcessor p;
+        juce::AudioProcessor::BusesLayout layout;
+        layout.inputBuses.add(channels==1 ? juce::AudioChannelSet::mono() : juce::AudioChannelSet::stereo());
+        layout.outputBuses=layout.inputBuses;
+        check(p.setBusesLayout(layout),"mono/stereo layout");
+        p.setAnalogNoiseEnabled(false); p.prepareToPlay(rate,64);
+        juce::AudioBuffer<float> b(channels,257); juce::MidiBuffer midi;
+        for(int iteration=0;iteration<20;++iteration)
+        {
+            parameter(p,"drive",iteration%2 ? 10.0f : -10.0f); parameter(p,"sub_punch",iteration%2 ? -10.0f : 10.0f);
+            parameter(p,"autogain",iteration%2 ? 1.0f : 0.0f); parameter(p,"bypass",iteration%2 ? 0.0f : 1.0f);
+            p.setConsoleVariant(iteration%5); p.setActiveStages(1+iteration%8); p.setAnalogNoiseEnabled(iteration%2==0);
+            for(int ch=0;ch<channels;++ch) for(int n=0;n<b.getNumSamples();++n) b.setSample(ch,n,0.2f*std::sin(static_cast<float>(n)*0.17f));
+            measureAllocations=true; p.processBlock(b,midi); measureAllocations=false;
+            bool finite=true;
+            for(int ch=0;ch<channels;++ch) for(int n=0;n<b.getNumSamples();++n) finite &= std::isfinite(b.getSample(ch,n)) && std::abs(b.getSample(ch,n))<4.0f;
+            check(finite,"automation/oversized block remains bounded");
+        }
+        parameter(p,"bypass",1.0f); p.setAnalogNoiseEnabled(false);
+        b.clear(); for(int k=0;k<20;++k) { b.clear(); p.processBlock(b,midi); }
+        b.clear(); b.setSample(0,0,0.5f); p.processBlock(b,midi);
+        bool exact=true;
+        for(int n=0;n<b.getNumSamples();++n) exact &= std::abs(b.getSample(0,n)-(n==p.getLatencySamples()?0.5f:0.0f))<1.e-7f;
+        check(exact,"bypass is an exact latency-aligned dry impulse");
+        juce::MemoryBlock state; p.getStateInformation(state); p.setStateInformation(state.getData(),static_cast<int>(state.getSize()));
+        p.releaseResources();
+    }
+    {
+        JJ8NLSAudioProcessor a,b;
+        a.setAnalogNoiseEnabled(false); b.setAnalogNoiseEnabled(false);
+        a.prepareToPlay(48000,64); b.prepareToPlay(48000,64);
+        juce::AudioBuffer<float> inputA(2,4096),inputB(2,4096); juce::MidiBuffer midi;
+        for(int ch=0;ch<2;++ch) for(int n=0;n<4096;++n)
+            inputA.setSample(ch,n,0.3f*std::sin(static_cast<float>(n)*(ch==0?0.1f:0.17f)));
+        inputB.makeCopyOf(inputA);
+        a.processBlock(inputA,midi);
+        for(int offset=0;offset<4096;offset+=13)
+        {
+            const int count=std::min(13,4096-offset);
+            float* ptrs[]{inputB.getWritePointer(0,offset),inputB.getWritePointer(1,offset)};
+            juce::AudioBuffer<float> view(ptrs,2,count); b.processBlock(view,midi);
+        }
+        double error=0;
+        for(int ch=0;ch<2;++ch) for(int n=0;n<4096;++n)
+            error=std::max(error,std::abs(static_cast<double>(inputA.getSample(ch,n)-inputB.getSample(ch,n))));
+        check(error<1.e-6,"block partition invariance: 4096 samples versus 13-sample blocks");
+    }
+    check(allocations.load()==0,"zero operator new/new[] calls inside processBlock (including automation and chunks)");
+}
+void benchmark(const std::filesystem::path& out)
+{
+    std::ofstream csv(out/"cpu.csv");
+    csv << "sample_rate,block_size,setting,median_us,p95_us,max_us,median_deadline_percent,p95_deadline_percent\n";
+    for(double rate : {48000.0,96000.0}) for(int size : {64,256,512}) for(int setting : {0,1})
+    {
+        JJ8NLSAudioProcessor p; p.setAnalogNoiseEnabled(true); p.prepareToPlay(rate,size);
+        if(setting) { parameter(p,"drive",10); parameter(p,"sub_punch",10); p.setConsoleVariant(4); }
+        juce::AudioBuffer<float> b(2,size); juce::MidiBuffer midi;
+        std::vector<double> timings; timings.reserve(300);
+        for(int run=0;run<360;++run)
+        {
+            for(int ch=0;ch<2;++ch) for(int n=0;n<size;++n)
+                b.setSample(ch,n,0.18f*std::sin(static_cast<float>(run*size+n)*0.131f));
+            const auto start=std::chrono::steady_clock::now(); p.processBlock(b,midi);
+            const double us=std::chrono::duration<double,std::micro>(std::chrono::steady_clock::now()-start).count();
+            if(run>=60) timings.push_back(us);
+        }
+        std::sort(timings.begin(),timings.end());
+        const double deadline=size/rate*1.e6;
+        csv << rate << ',' << size << ',' << (setting?"HEAT_D10_T10":"Jaycen_default") << ','
+            << timings[150] << ',' << timings[285] << ',' << timings.back() << ','
+            << 100*timings[150]/deadline << ',' << 100*timings[285]/deadline << '\n';
+    }
+}
+
+int main(int argc,char** argv)
+{
+    const std::filesystem::path out=argc>1 ? argv[1] : "measurements"; std::filesystem::create_directories(out);
+    if(argc>2 && std::string(argv[2])=="--bench") { benchmark(out); return 0; }
+    regressions();
+    if (argc>2 && std::string(argv[2])=="--regressions-only") return failures ? 1 : 0;
+    for(int variant=0;variant<5;++variant)
+    {
+        const auto name=std::to_string(variant);
+        capture<jj8nls::JJ8NLSChainDSP>(out/("new_fr_"+name+".f32"),3,variant,0,1,"impulse",1.e-4,0);
+        capture<legacy8::JJ8NLSChainDSP>(out/("old_fr_"+name+".f32"),2,variant,0,1,"impulse",1.e-4,0);
+        for(auto spec : {std::pair<const char*,double>{"r18",std::sqrt(2.0)*std::pow(10.0,-18.0/20)}, {"p6",std::pow(10.0,-6.0/20)}, {"p3",std::pow(10.0,-3.0/20)}})
+        {
+            capture<jj8nls::JJ8NLSChainDSP>(out/("new_h_"+name+"_"+spec.first+".f32"),3,variant,0,1,"sine",spec.second,1000);
+            capture<legacy8::JJ8NLSChainDSP>(out/("old_h_"+name+"_"+spec.first+".f32"),2,variant,0,1,"sine",spec.second,1000);
+        }
+        capture<jj8nls::JJ8NLSChainDSP>(out/("new_ag_"+name+".f32"),3,variant,0,1,"sine",0.17803894,1000,true);
+    }
+    for(int tone : {-10,10}) capture<jj8nls::JJ8NLSChainDSP>(out/("new_tone_"+std::to_string(tone)+".f32"),3,0,tone,1,"impulse",1.e-4,0);
+    for(int drive : {-8,8}) capture<jj8nls::JJ8NLSChainDSP>(out/("new_heat_"+std::to_string(drive)+".f32"),3,4,10,drive,"sine",0.17803894,1000);
+    for(int factor : {0,3,4}) capture<jj8nls::JJ8NLSChainDSP>(out/("alias_"+std::to_string(factor)+".f32"),factor,0,10,10,"sine",0.70794578,11000);
+    std::cout << "FAILURES=" << failures << '\n'; return failures ? 1 : 0;
+}

@@ -69,21 +69,21 @@ public:
             if (v > 1.05)
                 character = "Mas saturacion armonica H2..H16 en las 8 consolas";
             else if (v >= 0.0)
-                character = "Menos empuje en Slot 1 (hacia base 8x NLS)";
+                character = "Calidez sutil calibrada en las 8 etapas";
             else
-                character = "Transformador Limpio (reduce THD en las 8 consolas) + Expansion de Transitorios (+Punch)";
+                character = "Caracter de saturacion bipolar; HEAT negativo prioriza impares";
 
             return name + " (Saturacion / Clean Punch 8x NLS): " + valStr
                  + " [" + character + "] — Doble clic: +1.0 | Clic derecho: Menu";
         }
 
-        juce::String subInfo = "1:1 Jaycen Joshua (+6.2 dB @ 27 Hz, L=R 0.00 dB)";
+        juce::String subInfo = "Console: punch 40-60 Hz, subsonico 21 Hz, tolerancias L/R";
         if (v > 0.05)
-            subInfo = "Full Phat & Air: Mas Subgrave 27 Hz (hasta +9.3 dB) + Abre Aire 16 kHz";
+            subInfo = "Full Phat & Air: sub controlado + pre/de-enfasis + aire";
         else if (v < -0.05)
             subInfo = "Tight Sub: Controla/recorta el bulto de 27 Hz hacia respuesta plana";
 
-        return name + " (Sub 27 Hz + Air 16 kHz L=R): " + valStr
+        return name + " (Sub + Air, Dual Mono): " + valStr
              + " [" + subInfo + "] — Doble clic: 0.0 | Clic derecho: Menu";
     }
 
@@ -113,7 +113,7 @@ public:
     FLModePillButton()
     {
         setClickingTogglesState (true);
-        setTooltip ("AutoGain Estereo (LNK / Luz Verde = ON | IND = OFF): Iguala el volumen RMS de salida al de entrada tras las 8 consolas manteniendo L=R clavado a 0.00 dB (Clic derecho: Skins)");
+        setTooltip ("AutoGain Estereo (LNK / Luz Verde = ON | IND = OFF): Iguala el volumen RMS de salida al de entrada tras las 8 consolas con ganancia enlazada que conserva el balance estereo (Clic derecho: Skins)");
     }
 
     std::function<void()> onRightClickMenu;

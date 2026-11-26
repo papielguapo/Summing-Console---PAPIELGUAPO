@@ -1,0 +1,86 @@
+[
+  {
+    "check": "Jaycen 8x nominal THD -70..-60 dB",
+    "pass": true
+  },
+  {
+    "check": "Jaycen 8x THD rises for hot peaks",
+    "pass": true
+  },
+  {
+    "check": "Jaycen 8x steady auto-gain within 0.1 dB",
+    "pass": true
+  },
+  {
+    "check": "Jaycen 8x L/R tolerances under 0.3 dB",
+    "pass": true
+  },
+  {
+    "check": "SSL Spike 8x nominal THD -70..-60 dB",
+    "pass": true
+  },
+  {
+    "check": "SSL Spike 8x THD rises for hot peaks",
+    "pass": true
+  },
+  {
+    "check": "SSL Spike 8x steady auto-gain within 0.1 dB",
+    "pass": true
+  },
+  {
+    "check": "SSL Spike 8x L/R tolerances under 0.3 dB",
+    "pass": true
+  },
+  {
+    "check": "Neve Nevo 8x nominal THD -70..-60 dB",
+    "pass": true
+  },
+  {
+    "check": "Neve Nevo 8x THD rises for hot peaks",
+    "pass": true
+  },
+  {
+    "check": "Neve Nevo 8x steady auto-gain within 0.1 dB",
+    "pass": true
+  },
+  {
+    "check": "Neve Nevo 8x L/R tolerances under 0.3 dB",
+    "pass": true
+  },
+  {
+    "check": "EMI Mike 8x nominal THD -70..-60 dB",
+    "pass": true
+  },
+  {
+    "check": "EMI Mike 8x THD rises for hot peaks",
+    "pass": true
+  },
+  {
+    "check": "EMI Mike 8x steady auto-gain within 0.1 dB",
+    "pass": true
+  },
+  {
+    "check": "EMI Mike 8x L/R tolerances under 0.3 dB",
+    "pass": true
+  },
+  {
+    "check": "HEAT Hybrid 8x nominal THD -70..-60 dB",
+    "pass": true
+  },
+  {
+    "check": "HEAT Hybrid 8x THD rises for hot peaks",
+    "pass": true
+  },
+  {
+    "check": "HEAT Hybrid 8x steady auto-gain within 0.1 dB",
+    "pass": true
+  },
+  {
+    "check": "HEAT Hybrid 8x L/R tolerances under 0.3 dB",
+    "pass": true
+  },
+  {
+    "check": "8x alias foldback below -85 dBc",
+    "pass": true
+  }
+]

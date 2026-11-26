@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(JJ8NLS VERSION 1.0.0 LANGUAGES C CXX)
+project(JJ8NLS VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(JJ8NLS_JUCEAIDE "" CACHE FILEPATH "Optional existing juceaide executable for restricted build environments")
+if(JJ8NLS_JUCEAIDE)
+    set(JUCE_BUILD_HELPER_TOOLS ON)
+endif()
 
 if(EXISTS "C:/Users/anton/Desktop/FLResamplingQuality/build/_deps/juce-src/CMakeLists.txt")
     add_subdirectory("C:/Users/anton/Desktop/FLResamplingQuality/build/_deps/juce-src"
@@ -21,6 +26,11 @@ else()
         GIT_SHALLOW    TRUE
     )
     FetchContent_MakeAvailable(JUCE)
+endif()
+
+if(JJ8NLS_JUCEAIDE AND NOT TARGET juce::juceaide)
+    add_executable(juce::juceaide IMPORTED GLOBAL)
+    set_target_properties(juce::juceaide PROPERTIES IMPORTED_LOCATION "${JJ8NLS_JUCEAIDE}")
 endif()
 
 juce_add_plugin(JJ8NLS
@@ -69,3 +79,13 @@ target_link_libraries(JJ8NLS
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+option(JJ8NLS_BUILD_TESTS "Build offline DSP measurement and processor regression runner" OFF)
+if(JJ8NLS_BUILD_TESTS)
+    enable_testing()
+    juce_add_console_app(JJ8NLSMeasurements PRODUCT_NAME "JJ8NLS Measurements")
+    target_sources(JJ8NLSMeasurements PRIVATE Tests/Measurements.cpp)
+    target_include_directories(JJ8NLSMeasurements PRIVATE Source "${CMAKE_CURRENT_BINARY_DIR}/JJ8NLS_artefacts/JuceLibraryCode")
+    target_link_libraries(JJ8NLSMeasurements PRIVATE JJ8NLS juce::juce_dsp juce::juce_audio_utils)
+    target_compile_definitions(JJ8NLSMeasurements PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+    add_test(NAME DSPRegression COMMAND JJ8NLSMeasurements "${CMAKE_CURRENT_BINARY_DIR}/measurements")
+endif()

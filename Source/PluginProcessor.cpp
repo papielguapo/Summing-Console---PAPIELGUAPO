@@ -5,14 +5,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout JJ8NLSAudioProcessor::create
 {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
 
-    // Slot 1 Mike Drive: Bipolar [-10.0, +10.0], Default +1.0 (Jaycen Joshua 8x NLS Buss Drum Chain default)
+    // Global eight-stage drive; existing parameter ID and range remain session compatible.
     layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { kParamDrive, 1 },
         "Drive",
         juce::NormalisableRange<float> (-10.0f, 10.0f, 0.01f),
         1.0f));
 
-    // Sub Punch / Tone (27 Hz Transformer Bump): Bipolar [-10.0, +10.0], Default 0.0 = 100% 1:1 Jaycen Joshua (+6.2 dB @ 27 Hz)
+    // Tone: controlled transformer resonance, Tight Sub and paired pre/de-emphasis.
     layout.add (std::make_unique<juce::AudioParameterFloat> (
         juce::ParameterID { kParamSubPunch, 1 },
         "Tone",
@@ -45,16 +45,10 @@ JJ8NLSAudioProcessor::JJ8NLSAudioProcessor()
     autoGainParam = apvts.getRawParameterValue (kParamAutoGain);
     bypassParam   = apvts.getRawParameterValue (kParamBypass);
 
-    for (size_t i = 0; i < oversamplers.size(); ++i)
-    {
-        oversamplers[i] = std::make_unique<juce::dsp::Oversampling<float>> (
-            2,
-            i + 1,
-            juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,
-            true);
-    }
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>> (
+        2, 3, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, true);
 
-    // Fixed 1:1 Jaycen Joshua 8x chain by default:
+    // Reference-inspired model order, full eight-stage cascade by default:
     // 1:Mike (Drv 1.0, Noise Off) -> 2:Spike -> 3:Mike -> 4:Mike -> 5:Mike -> 6:Spike -> 7:Nevo -> 8:Mike
     dspEngine.applyDefaultJaycenJoshuaChain();
     dspEngine.setStereoBalanceMode (jj8nls::StereoBalanceMode::SubAndMidLocked);
@@ -76,7 +70,7 @@ const juce::String JJ8NLSAudioProcessor::getName() const
 bool JJ8NLSAudioProcessor::acceptsMidi() const  { return false; }
 bool JJ8NLSAudioProcessor::producesMidi() const { return false; }
 bool JJ8NLSAudioProcessor::isMidiEffect() const { return false; }
-double JJ8NLSAudioProcessor::getTailLengthSeconds() const { return 0.0; }
+double JJ8NLSAudioProcessor::getTailLengthSeconds() const { return 0.5; }
 
 int JJ8NLSAudioProcessor::getNumPrograms() { return 1; }
 int JJ8NLSAudioProcessor::getCurrentProgram() { return 0; }
@@ -86,31 +80,18 @@ void JJ8NLSAudioProcessor::changeProgramName (int, const juce::String&) {}
 
 void JJ8NLSAudioProcessor::applyOversamplingConfiguration (int osMode)
 {
-    const int clampedMode = juce::jlimit (0, 3, osMode);
-    activeOSMode = clampedMode;
-
-    const int osFactor = 1 << clampedMode;
-    const double effectiveSampleRate = std::max (8000.0, baseSampleRate * static_cast<double> (osFactor));
-
+    juce::ignoreUnused (osMode);
+    activeOSMode = 3;
+    const double effectiveSampleRate = baseSampleRate * 8.0;
     dspEngine.prepare (effectiveSampleRate);
+    driveSmoothed.reset (effectiveSampleRate, 0.030);
+    toneSmoothed.reset (effectiveSampleRate, 0.030);
+    driveSmoothed.setCurrentAndTargetValue (driveParam->load());
+    toneSmoothed.setCurrentAndTargetValue (subPunchParam->load());
+    dspEngine.setBipolarDrive (driveSmoothed.getCurrentValue());
+    dspEngine.setBipolarTone (toneSmoothed.getCurrentValue());
+    setLatencySamples (static_cast<int> (std::lround (oversampler->getLatencyInSamples())));
 
-    const double curDrive = (driveParam != nullptr) ? static_cast<double> (driveParam->load (std::memory_order_relaxed)) : 1.0;
-    driveSmoothed.reset (effectiveSampleRate, 0.015);
-    driveSmoothed.setCurrentAndTargetValue (curDrive);
-    dspEngine.setBipolarDrive (curDrive);
-    lastDriveVal = curDrive;
-
-    int newLatency = 0;
-    if (clampedMode >= 1 && clampedMode <= 3)
-    {
-        auto& os = oversamplers[static_cast<size_t> (clampedMode - 1)];
-        if (os != nullptr)
-        {
-            os->reset();
-            newLatency = static_cast<int> (std::lround (os->getLatencyInSamples()));
-        }
-    }
-    setLatencySamples (newLatency);
 }
 
 void JJ8NLSAudioProcessor::syncParametersToEngine() noexcept
@@ -128,7 +109,7 @@ void JJ8NLSAudioProcessor::syncParametersToEngine() noexcept
     if (std::abs (curSub - lastSubPunchVal) > 1.0e-4)
     {
         lastSubPunchVal = curSub;
-        dspEngine.setBipolarTone (curSub);
+        toneSmoothed.setTargetValue (curSub);
     }
 
     if (curAG != lastAutoGainVal)
@@ -164,29 +145,27 @@ void JJ8NLSAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
     baseSampleRate = std::max (8000.0, sampleRate);
     maxBlockSize   = std::max (1, samplesPerBlock);
 
-    for (auto& os : oversamplers)
-    {
-        if (os != nullptr)
-        {
-            os->initProcessing (static_cast<size_t> (maxBlockSize));
-            os->reset();
-        }
-    }
-
+    oversampler->initProcessing (static_cast<size_t> (maxBlockSize));
+    oversampler->reset();
+    bypassMix.reset (baseSampleRate, 0.020);
+    bypassMix.setCurrentAndTargetValue (bypassParam->load() >= 0.5f ? 1.0f : 0.0f);
+    toneTick = 0;
     lastDriveVal       = -999.0;
     lastSubPunchVal    = -999.0;
     lastConsoleVariant = -1;
     lastActiveStages   = -1;
     applyOversamplingConfiguration (getOversamplingMode());
     syncParametersToEngine();
+    dryDelay.setSize (2, getLatencySamples() + maxBlockSize + 1);
+    dryDelay.clear();
+    dryPosition = 0;
 }
 
 void JJ8NLSAudioProcessor::releaseResources()
 {
     dspEngine.reset();
-    for (auto& os : oversamplers)
-        if (os != nullptr)
-            os->reset();
+    oversampler->reset();
+    dryDelay.clear();
 }
 
 bool JJ8NLSAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -204,100 +183,69 @@ bool JJ8NLSAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) c
 void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
-
-    const int totalNumInputChannels  = getTotalNumInputChannels();
-    const int totalNumOutputChannels = getTotalNumOutputChannels();
-    const int numSamples             = buffer.getNumSamples();
-
-    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, numSamples);
-
-    const int wantedOSMode = getOversamplingMode();
-    if (wantedOSMode != activeOSMode)
-        applyOversamplingConfiguration (wantedOSMode);
-
+    const int channels = juce::jlimit (0, 2, getTotalNumInputChannels());
+    const int samples = buffer.getNumSamples();
+    for (int ch = channels; ch < buffer.getNumChannels(); ++ch) buffer.clear (ch, 0, samples);
+    if (channels == 0 || samples == 0) return;
     syncParametersToEngine();
-
-    const bool isBypassed = (bypassParam != nullptr) && (bypassParam->load (std::memory_order_relaxed) >= 0.5f);
-    if (isBypassed || totalNumInputChannels <= 0 || numSamples <= 0)
+    bypassMix.setTargetValue (hostBypassed || bypassParam->load (std::memory_order_relaxed) >= 0.5f ? 1.0f : 0.0f);
+    float peak = 0.0f;
+    // Hosts may deliver blocks larger than the preparation hint. Chunk without allocating.
+    for (int offset = 0; offset < samples; offset += maxBlockSize)
     {
-        harmonicActivity.store (0.0f, std::memory_order_relaxed);
-        return;
+        const int count = std::min (maxBlockSize, samples - offset);
+        const int startPosition = dryPosition;
+        const int ringSize = dryDelay.getNumSamples();
+        for (int n=0; n<count; ++n)
+        {
+            for (int ch=0; ch<channels; ++ch)
+                dryDelay.setSample (ch, (startPosition+n) % ringSize, buffer.getSample (ch, offset+n));
+        }
+        juce::dsp::AudioBlock<float> whole (buffer);
+        auto base = whole.getSubsetChannelBlock (0, static_cast<size_t> (channels))
+                         .getSubBlock (static_cast<size_t> (offset), static_cast<size_t> (count));
+        auto high = oversampler->processSamplesUp (base);
+        auto* left = high.getChannelPointer (0);
+        auto* right = channels == 2 ? high.getChannelPointer (1) : nullptr;
+        for (size_t n=0; n<high.getNumSamples(); ++n)
+        {
+            dspEngine.setBipolarDrive (driveSmoothed.getNextValue());
+            const double tone = toneSmoothed.getNextValue();
+            // Coefficient designs run at a bounded control rate; filter coefficients
+            // themselves slew continuously and preserve their delay states.
+            if (++toneTick >= 32)
+            {
+                toneTick = 0;
+                dspEngine.setBipolarTone (tone);
+            }
+            if (right != nullptr) dspEngine.processSampleStereo (left[n], right[n]);
+            else dspEngine.processSampleMono (left[n]);
+        }
+        oversampler->processSamplesDown (base);
+        for (int n=0; n<count; ++n)
+        {
+            const float mix = bypassMix.getNextValue();
+            const int read = (startPosition+n-getLatencySamples()+ringSize) % ringSize;
+            for (int ch=0; ch<channels; ++ch)
+            {
+                const float wet = buffer.getSample (ch, offset+n);
+                const float dry = dryDelay.getSample (ch, read);
+                const float out = wet + mix * (dry-wet);
+                buffer.setSample (ch, offset+n, out);
+                peak = std::max (peak, std::abs (out));
+            }
+        }
+        dryPosition = (startPosition+count) % ringSize;
     }
-
-    float blockPeak = 0.0f;
-
-    if (activeOSMode >= 1 && activeOSMode <= 3 && oversamplers[static_cast<size_t> (activeOSMode - 1)] != nullptr)
-    {
-        auto& os = *oversamplers[static_cast<size_t> (activeOSMode - 1)];
-        juce::dsp::AudioBlock<float> baseBlock (buffer);
-        const size_t activeCh = static_cast<size_t> (juce::jlimit (1, 2, totalNumInputChannels));
-        auto activeBaseBlock = baseBlock.getSubsetChannelBlock (0, activeCh);
-        auto osBlock = os.processSamplesUp (activeBaseBlock);
-        const int osSamples = static_cast<int> (osBlock.getNumSamples());
-
-        if (activeCh == 1)
-        {
-            float* ch0 = osBlock.getChannelPointer (0);
-            for (int n = 0; n < osSamples; ++n)
-            {
-                if (driveSmoothed.isSmoothing())
-                    dspEngine.setBipolarDrive (driveSmoothed.getNextValue());
-
-                dspEngine.processSampleMono (ch0[n]);
-                blockPeak = std::max (blockPeak, std::abs (ch0[n]));
-            }
-        }
-        else
-        {
-            float* chL = osBlock.getChannelPointer (0);
-            float* chR = osBlock.getChannelPointer (1);
-            for (int n = 0; n < osSamples; ++n)
-            {
-                if (driveSmoothed.isSmoothing())
-                    dspEngine.setBipolarDrive (driveSmoothed.getNextValue());
-
-                dspEngine.processSampleStereo (chL[n], chR[n]);
-                blockPeak = std::max (blockPeak, std::max (std::abs (chL[n]), std::abs (chR[n])));
-            }
-        }
-
-        os.processSamplesDown (activeBaseBlock);
-    }
-    else
-    {
-        if (totalNumInputChannels == 1)
-        {
-            float* ch0 = buffer.getWritePointer (0);
-            for (int n = 0; n < numSamples; ++n)
-            {
-                if (driveSmoothed.isSmoothing())
-                    dspEngine.setBipolarDrive (driveSmoothed.getNextValue());
-
-                dspEngine.processSampleMono (ch0[n]);
-                blockPeak = std::max (blockPeak, std::abs (ch0[n]));
-            }
-        }
-        else
-        {
-            float* chL = buffer.getWritePointer (0);
-            float* chR = buffer.getWritePointer (1);
-            for (int n = 0; n < numSamples; ++n)
-            {
-                if (driveSmoothed.isSmoothing())
-                    dspEngine.setBipolarDrive (driveSmoothed.getNextValue());
-
-                dspEngine.processSampleStereo (chL[n], chR[n]);
-                blockPeak = std::max (blockPeak, std::max (std::abs (chL[n]), std::abs (chR[n])));
-            }
-        }
-    }
-
-    const float db = juce::Decibels::gainToDecibels (blockPeak, -60.0f);
-    const float normAct = juce::jlimit (0.0f, 1.0f, (db + 48.0f) / 48.0f);
-    const float prevAct = harmonicActivity.load (std::memory_order_relaxed);
-    harmonicActivity.store (normAct > prevAct ? normAct : (prevAct * 0.85f + normAct * 0.15f),
+    harmonicActivity.store (juce::jlimit (0.0f, 1.0f, (juce::Decibels::gainToDecibels (peak, -60.0f)+48.0f)/48.0f),
                             std::memory_order_relaxed);
+}
+
+void JJ8NLSAudioProcessor::processBlockBypassed (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
+{
+    hostBypassed = true;
+    processBlock (buffer, midi);
+    hostBypassed = false;
 }
 
 bool JJ8NLSAudioProcessor::hasEditor() const { return true; }

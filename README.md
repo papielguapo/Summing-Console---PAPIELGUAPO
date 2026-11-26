@@ -1,119 +1,86 @@
-# 🎚️ Summing Console - PAPIELGUAPO
+# Summing Console — PAPIELGUAPO 2.0
 
-**Recreación en VST3 (64-bit) y Aplicación Standalone (.EXE) para Windows del truco de baterías y buses de Jaycen Joshua con 8 consolas analógicas NLS Buss en serie (`Mike` / `Spike` / `Nevo`), con Sub+Mid L=R Locked (`0.00 dB` de desvío estéreo), techo dinámico anti-rotura a cualquier nivel de entrada, AutoGain RMS estéreo y 2 skins intercambiables (FL Studio Dark Mixer UI & Pro Tools HEAT 1:1) por [papielguapo](https://github.com/papielguapo).**
+Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike → Spike → Mike → Mike → Mike → Spike → Nevo → Mike**. Alternative banks provide all-Spike, all-Nevo, all-Mike and alternating Spike/Nevo HEAT Hybrid character.
 
----
+Version 2 replaces the envelope-normalized Chebyshev exciter with a fixed-reference, biased soft saturation transfer. This is an original, reference-inspired model. Commercial NLS/HEAT equivalence has **not** been established by reference measurements.
 
-## 🖼️ Vista de las 6 Skins Intercambiables (FL Studio, Pro Tools 1:1, Atari ST, Ableton 12, Logic Pro X, Cubase 14)
+## DSP architecture
 
-Haz **clic derecho** en cualquier parte del plugin para cambiar al instante entre las **6 skins** (la elección, la variante de consola, el oversampling y el tamaño se guardan con tu proyecto/sesión):
-
-| **Skin 1: FL Studio (Dark Mixer UI)** | **Skin 2: Pro Tools HEAT 1:1 (Original)** |
-| :---: | :---: |
-| ![Skin FL Studio](Screenshots/skin_fl_studio.png) | ![Skin Pro Tools HEAT 1:1](Screenshots/skin_pro_tools.png) |
-| Chasis oscuro estilo mezclador de FL Studio (`#262A2E`), cabecera limpia **`SUMM`** con LED armónico reactivo, botón **`AG` / `RAW`** de AutoGain, controles **`DRIVE`** y **`TONE`** y switch **`ACTIVE` / `BYPASS`**. | Recreación 1:1 de la tira HEAT de Pro Tools con botón **`[⏻]`** (LED verde = AutoGain activo), interruptor **`OMITIR`** iluminado en ámbar, barra de actividad armónica y controles **`Saturación`** y **`Tono`**. |
-
-### Galería Completa de los 6 Skins Incluidos
-
-![All 6 Skins Showcase](Screenshots/all_6_skins.png)
-
----
-
-## 📊 Análisis en PluginDoctor (Armónicos `H2..H16` + Respuesta `27 Hz` L=R Clavada)
-
-![Análisis Completo en PluginDoctor](Screenshots/plugin_doctor_full.png)
-
-### Escalera Armónica Pares + Impares (`THD = -34.3 dB` / `THD+N = -34.4 dB`)
-
-![Escalera de Armónicos Chebyshev H2..H16](Screenshots/plugin_doctor_harmonics.png)
-
----
-
-## 🎛️ Linear & Harmonic Analysis de lo Implementado: 5 Variantes de Consola 8x (incl. FL HEAT Hybrid) + Tone Bipolar + Drive Híbrido
-
-### 1. Comparativa Linear & Harmonic Analysis: Las 5 Variantes de 8 Consolas en Serie (`0.00 dB L=R`)
-
-Desde el menú contextual (clic derecho) puedes alternar entre **5 configuraciones completas de 8 consolas en serie**, todas calibradas a **0.00 dB L=R @ 1 kHz**:
-
-- **1. Jaycen Joshua 8x (Default):** `5× EMI TG12345 (Mike) + 2× SSL 4000G (Spike) + 1× Neve 5116 (Nevo)` — **+6.9 dB @ 27 Hz**, **-2.6 dB @ 16 kHz**, **THD = -34.3 dB** (balance híbrido par/impar ideal para Drum Bus, 808 y Subgrupos).
-- **2. All SSL Spike 8x:** `8× SSL 4000G` — **+1.9 dB @ 26.5 Hz**, **-1.5 dB @ 17.5 kHz**, **THD = -36.2 dB** (el modo más limpio, abierto y rápido en transientes; ideal para **Vocal Bus** y **Mix Bus / Master**).
-- **3. All Neve Nevo 8x:** `8× Neve 5116` — **+6.8 dB @ 27.5 Hz**, **-3.5 dB @ 15 kHz**, **THD = -33.2 dB** con fuerte dominancia de **armónicos pares (`H2 = -47.9 dB`, `H4 = -57.9 dB`)** que aportan grosor cremoso de transformador Marinair y doman agudos ásperos.
-- **4. All EMI Mike 8x:** `8× EMI TG12345` — **+9.0 dB @ 27 Hz**, **-2.9 dB @ 16 kHz**, **THD = -33.6 dB** (saturación densa par+impar estilo Abbey Road con máximo peso sub-grave para **808s, Synth Bass y Drums agresivos**).
-- **5. FL HEAT Hybrid 8x (`4× SSL Spike + 4× Neve Nevo`):** Alterna 4 etapas SSL y 4 etapas Neve para replicar el comportamiento bipolar exacto de **FL HEAT / Crane Song Ocelot**:
-  - **Drive Positivo (`0` a `+10` — *Triode / Tape*):** dispara la dominancia de **armónicos pares (`H2`, `H4`, `H6` hasta `2.4x`)** para calor valvular y de cinta.
-  - **Drive Negativo (`0` a `-10` — *Console / Solid-State*):** invierte la polaridad armónica hacia **armónicos impares (`H3`, `H5`, `H7` hasta `2.5x`)** + definición extra de transientes.
-  - **Tone Bipolar Pre/Post-Emphasis:** en `0.0` mantiene un sub contenido (`+2.0 dB @ 27 Hz`, `-0.8 dB @ 16 kHz`); hacia `+10` abre hasta **`+4.2 dB @ 16 kHz`** y hacia `-10` redondea agudos con cuerpo cálido analógico.
-
-![4x Console Variants Linear & Harmonic Analysis](Screenshots/console_variants_analysis.png)
-
-### 2. Bipolar Tone (Opción B), Hybrid Negative Drive, Oversampling Real (`1x..8x`) & Noise Floor (`ON/OFF`)
-
-- **Bipolar TONE (Opción B — `-10.0` a `+10.0`):**
-  - En **`0.0`**: Respuesta 1:1 Jaycen Joshua (`+6.9 dB @ 27 Hz`, `-2.6 dB @ 16 kHz`).
-  - Hacia **`+10.0` (*Full Phat & Air*)**: Empuja el sub de transformador (`27 Hz`) hasta **`+9.5 dB`** y abre simultáneamente el *High-Shelf* (`15–17.5 kHz`) de las 8 consolas hasta **`+1.9 dB` de aire sedoso**.
-  - Hacia **`-10.0` (*Tight Sub*)**: Limpia progresivamente el golpe de `27 Hz` hasta dejar el subgrave totalmente plano (**`0.0 dB`**).
-- **Hybrid Negative DRIVE (`0.0` a `-10.0` — *Clean Transformer + Transient Headroom*):**
-  - Atenúa cuadráticamente los armónicos `H2..H16` de las 8 etapas hasta **`0% THD`** conservando intacta la curva EQ analógica de los 8 transformadores y aplica hasta **`+1.5 dB` de expansión de transientes** (*attack punch*).
-- **Oversampling Polifásico IIR Real (`1x`, `2x`, `4x`, `8x`) + True Mono Engine + Noise Floor (`ON/OFF`):**
-  - Elimina el *aliasing* de los armónicos Chebyshev de alto orden (`H2..H16`), optimiza al 50% el uso de CPU en pistas mono y permite apagar por completo el piso de ruido analógico (`1/f Pink + 50 Hz PSU Hum`) hacia `-140 dBFS`.
-
-![Bipolar Tone, Negative Drive & Noise Floor Analysis](Screenshots/bipolar_tone_drive_analysis.png)
-
----
-
-## 🧠 Qué hace el Motor DSP (`Source/DSP/JJ8NLSDSP.h`)
-
-1. **Cadena Fija por Defecto de Jaycen Joshua (8x NLS Buss en serie):**
-   - **Instancia 1:** `Mike` (EMI TG12345) — **`Drive = 1.0`**, `Noise = OFF`
-   - **Instancia 2:** `Spike` (SSL 4000G) — `Drive = 0.0`, `Noise = OFF`
-   - **Instancia 3:** `Mike` (EMI TG12345) — `Drive = 0.0`, `Noise = OFF`
-   - **Instancia 4:** `Mike` (EMI TG12345) — `Drive = 0.0`, `Noise = OFF`
-   - **Instancia 5:** `Mike` (EMI TG12345) — `Drive = 0.0`, `Noise = OFF`
-   - **Instancia 6:** `Spike` (SSL 4000G) — `Drive = 0.0`, `Noise = OFF`
-   - **Instancia 7:** `Nevo` (Neve 5116) — `Drive = 0.0`, `Noise = OFF`
-   - **Instancia 8:** `Mike` (EMI TG12345) — `Drive = 0.0`, **`Noise = ON`**
-2. **Sub + Mid Match L=R Clavado (`0.00 dB` de desvío entre Izquierda y Derecha):**
-   - En el truco original con 8 instancias seguidas, las tolerancias analógicas acumulaban más de `1.1 dB` de diferencia entre L y R y desplazaban el golpe de subgrave (`20–40 Hz`) hacia un lado del medidor.
-   - **Summing Console** clava exactamente a **`0.00 dB`** la resonancia de transformador de **`+6.2 dB @ 27 Hz`** y todo el rango medio/agudo en ambos canales (`L = R`), mientras conserva el carácter micro-estéreo en los armónicos superiores (`H4..H16`).
-3. **Techo Dinámico por Etapa (Sin rotura aunque la señal entre a `0 dBFS`):**
-   - Cada una de las 8 consolas incorpora un detector de techo de ataque instantáneo y relajación suave (`500 ms`) que mantiene el argumento de la serie armónica Chebyshev `T2..T16` dentro de su rango óptimo sin importar si entras a `-18 dBFS`, `-6 dBFS` o `0 dBFS`.
-4. **AutoGain Estéreo Enlazado (`AG` / `[⏻]`):**
-   - Compensa automáticamente el empuje del transformador de `+6.2 dB @ 27 Hz` y el incremento de `Drive` calculando la potencia RMS estéreo combinada (`L+R`), manteniendo el balance estéreo `0.00 dB` intacto y con puerta de silencio a `-60 dBFS`.
-
----
-
-## 🎚️ Controles y Atajos Rápidos
-
-| Control | Rango | Por Defecto (Preset JJ) | Descripción |
-| :--- | :---: | :---: | :--- |
-| **DRIVE (`Saturación`)** | `-10.0` a `+10.0` | **`+1.0`** | **Positivo (`0` a `+10`):** excita la cadena de 8 consolas con suavizado por muestra. **Negativo (`0` a `-10`):** modo *Clean Transformer + Transient Headroom* (atenúa `THD` hacia `0%` conservando la curva EQ de transformador + hasta `+1.5 dB` de pegada en transientes). **Doble clic** para volver a `+1.0`. |
-| **TONE (`Tono`)** | `-10.0` a `+10.0` | **`0.0`** | **Opción B Bipolar:** en `0.0` mantiene la curva 1:1 (`+6.9 dB @ 27 Hz`, `-2.6 dB @ 16 kHz`); hacia `+10` (*Full Phat & Air*) sube el sub de `27 Hz` hasta `+9.5 dB` y abre el *High-Shelf* de `16 kHz` hasta `+1.9 dB`; hacia `-10` (*Tight Sub*) aplana el sub de `27 Hz` a `0.0 dB`. |
-| **AG / RAW (`[⏻]`)** | `ON` / `OFF` | **`ON` (`AG`)** | Activa o desactiva la compensación automática de ganancia RMS estéreo. |
-| **ACTIVE / BYPASS (`OMITIR`)** | `Active` / `Bypass` | **`Active`** | Bypass suave libre de clics. |
-| **Menú Contextual** | *Clic Derecho* | — | Permite elegir entre las **6 Skins**, las **5 Variantes de Consola 8x** (*Jaycen Joshua 8x*, *All SSL Spike 8x*, *All Neve Nevo 8x*, *All EMI Mike 8x*, *FL HEAT Hybrid 8x*), **Oversampling Real** (`1x`, `2x`, `4x`, `8x`), **Analog Noise Floor** (`ON` / `OFF`), **AutoGain** y **4 tamaños de interfaz**. |
-
----
-
-## 🚀 Instalación Rápida (Windows x64)
-
-1. Copia la carpeta **`Summing Console - Papielguapo.vst3`** dentro de:
-   ```text
-   C:\Program Files\Common Files\VST3\
-   ```
-2. **Versión Standalone (.EXE):**
-   Ejecuta directamente **`Summing Console - Papielguapo.exe`** sin necesidad de abrir un DAW.
-
----
-
-## 🛠️ Compilación desde el Código Fuente (CMake + JUCE 8 + Visual Studio)
-
-```powershell
-cmake -S . -B build -G "Visual Studio 18 2026" -A x64
-cmake --build build --config Release --parallel 8
+```
+Input → one 8x IIR upsampler
+      → 21–22 Hz first-order subsonic HP
+      → Tone pre-emphasis
+      → [minimum-phase impedance filters → biased saturation] × 8
+      → reciprocal de-emphasis → controlled air shelf
+      → 5 Hz first-order DC blocker → stereo-linked RMS AutoGain
+      → one downsampler → latency-aligned bypass crossfade → Output
 ```
 
----
+* **Single oversampled domain:** all eight stages run at 8 × the host sample rate. Quality is fixed at 8x; legacy 1x/2x/4x state settings migrate to 8x. Latency is integer compensated and reported in `prepareToPlay`, never changed from the audio callback. Finite oversampling reduces aliasing; it cannot mathematically eliminate every alias component.
+* **Stage interaction:** five minimum-phase biquads precede each nonlinear transfer: high-mid impedance, a controlled 27 Hz resonance, 52.8 Hz punch, a 92 Hz dip, and model-dependent top roll-off. Filter histories survive parameter changes.
+* **Sub headroom:** one 6 dB/oct high-pass at 21 Hz (22 Hz at Tone −10) prevents the old stacked infrabass boost. Tight Sub removes the controlled 27 Hz resonance while retaining the 40–60 Hz punch and 92 Hz dip. A separate 5 Hz DC blocker follows stage 8.
+* **Dual mono:** every stage/channel has deterministic frequency deviations of ±1.0–1.5% and a unique bias. Independent L/R audio states remain uncoupled. AutoGain applies a common gain to both channels and does not force their levels to match.
+* **Level calibration:** −18 dBFS RMS is the nominal 0 VU reference. Saturation has unity small-signal slope and a fixed knee; distortion increases with level instead of being normalized to a constant THD. Hot-level measurements distinguish peak from RMS units.
+* **Tone:** positive Tone raises a 4.5 kHz shelf ahead of saturation (up to +4 dB), applies its exact reciprocal after the cascade, then adds a proportional 12 kHz air shelf (up to +1.5 dB). The reciprocal pair is exact at settled coefficients, before nonlinear processing. Negative Tone tightens the sub. HEAT negative Drive reduces even bias to emphasize odd harmonics.
+* **AutoGain:** a stereo-linked 120 ms RMS detector with 45 ms gain slewing matches steady signal energy, bounded to ±12 dB. This is RMS compensation, not a promise of instantaneous or LUFS-identical perceived loudness for arbitrary material.
 
-## 👤 Créditos
+## Real-time behavior
 
-- **Desarrollador:** **[papielguapo](https://github.com/papielguapo)** (`COMPANY_NAME = "papielguapo"`)
+Drive, Tone, AutoGain, bypass, noise, stage enable and model character are smoothed. Tone filter designs run at a bounded control rate; biquad coefficient interpolation retains delay states and uses stable denominator interpolation. Settled filters skip coefficient interpolation, and fixed bias terms are cached.
+
+Oversampling storage and the dry delay ring are allocated in preparation. Oversized host buffers are processed in bounded chunks without resizing or allocating in `processBlock`. Both the plugin switch and host bypass use the same 20 ms latency-aware dry/wet transition; wet DSP continues running while bypassed to preserve state. A settled bypass returns the exact dry signal delayed by the reported latency.
+
+The parameter IDs (`drive`, `sub_punch`, `autogain`, `bypass`), plugin ID and saved skin/editor properties remain compatible. Old sessions will sound different because the DSP transfer and bass response intentionally changed. The six interface skins remain available.
+
+## Measurements
+
+![Frequency response and harmonics](Measurements/01_respuesta_y_armonicos.png)
+![DSP validation](Measurements/02_validacion_dsp.png)
+![CPU measurements](Measurements/03_consumo_cpu.png)
+
+Measured on an Intel Core i7-9750H, stereo at 256 samples, noise and AutoGain enabled:
+
+| Host rate | Median single-core audio deadline | P95 |
+| --- | --- | --- |
+| 48 kHz | 26–27% per instance | 30–35% |
+| 96 kHz | 51–53% per instance | 64–66% |
+
+This is a demanding bus/master processor. Smooth bypass keeps processing and does not reduce CPU use. The benchmark excludes GUI, audio driver and DAW overhead; full results include 64/256/512 sample blocks in `Measurements/cpu.csv`.
+
+Measurements are produced by the C++ offline runner from rendered floating-point audio, not drawn from model coefficients or third-party screenshots. The legacy comparison is an exact snapshot of the previous DSP header, using the former default 4x quality; the new chain uses 8x.
+
+* Host rate: 48 kHz; stereo; eight stages; Drive +1, Tone 0 except explicitly labeled cases.
+* Small-signal response: −80 dBFS impulse, two-second capture, noise and AutoGain disabled.
+* Harmonics: coherent 1 kHz sine, one-second warm-up and one-second capture; H2–H16 relative to H1 (dBc). Nominal input is −18 dBFS RMS; hot tests use −6 and −3 dBFS **peak**.
+* Tone: −10 and +10. HEAT: Drive −8/+8 with Tone +10.
+* Aliasing diagnostic: coherent 11 kHz at −3 dBFS peak, Drive/Tone +10, compared at 1x (test-only), 8x and 16x (test-only). Folded-harmonic energy excludes the genuine 11 kHz fundamental and 22 kHz second harmonic.
+* Regression checks: mono/stereo at 44.1/48/96/192 kHz, abrupt automation, oversized blocks, latency-aligned bypass, block-partition invariance and zero `operator new/new[]` calls in the callback. Allocation instrumentation covers C++ `new`, alongside a source audit of JUCE buffer allocation sites; it does not interpose every Windows/CRT heap API.
+* CPU tests: full processor, stereo, noise and AutoGain on, no GUI/device/DAW overhead. Median and P95 wall time are divided by the audio block deadline. These are single-core callback utilization figures, not whole-system CPU percentages.
+
+See `Measurements/mediciones.json`, `mediciones.csv`, `cpu.csv` and the test logs for measured values. Measurements characterize this implementation; hardware/proprietary-plugin matching and DAW listening comparisons remain separate validation tasks.
+
+## Build
+
+```powershell
+cmake -S . -B build -G "Visual Studio 18 2026" -DJJ8NLS_BUILD_TESTS=ON
+cmake --build build --config Release --target JJ8NLS_VST3 JJ8NLS_Standalone JJ8NLSMeasurements --parallel 4
+ctest --test-dir build -C Release --output-on-failure
+```
+
+The project reuses the existing local JUCE checkout when available and otherwise fetches JUCE 8.0.4. If Visual Studio's debug helper-tool bootstrap is unavailable, pass `-DJJ8NLS_JUCEAIDE="absolute/path/to/an/existing/juceaide.exe"` to reuse a compatible installed helper.
+
+```powershell
+# Run only processor regressions or CPU benchmarks:
+.\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures --regressions-only
+.\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures --bench
+# Full runner (default) includes the regressions and audio captures:
+.\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures
+python -m pip install numpy matplotlib
+python Tests/analyse.py captures Measurements
+```
+
+## Install
+
+Copy the complete `Summing Console - Papielguapo.vst3` bundle to a VST3 folder scanned by your DAW. The Standalone `.exe` can run independently. Keep the bundle structure intact. A separate build directory preserves previous binaries; this repository does not install plugins into system folders automatically.
+
+The model and console names describe reference-inspired signal character. They do not imply affiliation, endorsement, or verified identity with Waves, Avid, Crane Song, SSL, EMI or Neve.

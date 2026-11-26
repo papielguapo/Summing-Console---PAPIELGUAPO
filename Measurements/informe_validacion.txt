@@ -1,0 +1,63 @@
+SUMMING CONSOLE 2.0 — VALIDACION DSP
+Fecha: 2026-11-26
+Equipo: Intel Core i7-9750H @ 2.60 GHz; Windows x64; MSVC Release; JUCE 8.0.4.
+
+Arquitectura: un dominio 8x IIR; filtros minimos de fase antes de cada saturador; tolerancias L/R y por etapa de +/-1.0..1.5%; HP de primer orden 21-22 Hz antes de las etapas; DC 5 Hz despues; pre/de-enfasis reciproco y aire; AutoGain RMS enlazado; bypass compensado en latencia.
+
+METODO
+48 kHz, estereo, 8 etapas. Drive +1 / Tone 0 salvo donde se indica. Ruido y AutoGain desactivados para medir respuesta y THD.
+Respuesta: impulso a -80 dBFS, captura de 2 s. THD: seno coherente de 1 kHz, 1 s de calentamiento + 1 s de captura.
+Nominal -18 dBFS RMS = -14.99 dBFS pico; pruebas calientes -6 y -3 dBFS PICO. THD es suma de H2-H16 respecto a H1 (dBc).
+La comparativa anterior usa la cabecera original conservada en Tests/LegacyDSP.h y el antiguo 4x por defecto.
+
+RESULTADOS NOMINALES
+Variante | THD anterior dBc | THD nuevo dBc | respuesta 27 Hz / 53 Hz / 92 Hz dB | error AutoGain dB
+Jaycen 8x | -33.53 | -63.90 | +0.01 / +1.28 / -1.76 | +0.00071
+SSL Spike 8x | -35.82 | -65.98 | -1.60 / -0.17 / -0.91 | -0.00000
+Neve Nevo 8x | -32.33 | -61.42 | -0.07 / +0.92 / -1.80 | +0.00000
+EMI Mike 8x | -33.02 | -63.68 | +0.67 / +1.92 / -2.10 | +0.00000
+HEAT Hybrid 8x | -36.43 | -68.55 | -1.35 / +0.29 / -1.38 | -0.00143
+
+Jaycen: la ganancia a 27 Hz pasa de +6.92 dB a +0.01 dB; se conserva el punch a 53 Hz en +1.28 dB.
+
+ALIASING
+Prueba de 11 kHz / -3 dBFS pico / Drive +10 / Tone +10. Energia en posiciones de armonicos plegados, excluyendo H1 y H2 legitimo a 22 kHz.
+1x: -26.06 dBc
+8x: -109.65 dBc
+16x: -114.81 dBc
+
+REGRESIONES
+230 comprobaciones C++ correctas; 0 fallos. 21 criterios numericos correctos.
+Mono/estereo a 44.1/48/96/192 kHz; automatizacion de Drive/Tone/AG/bypass/ruido/variantes/numero de etapas; bloques mayores que el hint del host; bypass alineado; particionado de 4096 muestras frente a bloques de 13.
+0 llamadas operator new/new[] detectadas en processBlock, incluso con automatizacion y bloques grandes. Bufferes preasignados y auditados; la instrumentacion no intercepta todos los malloc/HeapAlloc del sistema.
+
+CPU REAL DEL PROCESADOR COMPLETO
+Mediana / P95 del tiempo del callback en porcentaje del plazo de UN nucleo; no es el porcentaje total del Administrador de tareas.
+Estereo; ruido y AutoGain ON; sin GUI, driver de audio ni DAW; 300 bloques temporizados por caso.
+Hz | muestras | ajuste | mediana % | P95 % | mediana us
+48000 | 64 | Jaycen_default | 25.64 | 28.56 | 341.9
+48000 | 64 | HEAT_D10_T10 | 32.23 | 38.69 | 429.8
+48000 | 256 | Jaycen_default | 27.12 | 34.88 | 1446.3
+48000 | 256 | HEAT_D10_T10 | 26.07 | 30.04 | 1390.4
+48000 | 512 | Jaycen_default | 25.77 | 33.20 | 2748.5
+48000 | 512 | HEAT_D10_T10 | 27.13 | 31.30 | 2894.0
+96000 | 64 | Jaycen_default | 51.31 | 55.98 | 342.1
+96000 | 64 | HEAT_D10_T10 | 64.42 | 86.46 | 429.5
+96000 | 256 | Jaycen_default | 51.35 | 63.64 | 1369.4
+96000 | 256 | HEAT_D10_T10 | 52.85 | 65.87 | 1409.4
+96000 | 512 | Jaycen_default | 51.14 | 59.98 | 2727.7
+96000 | 512 | HEAT_D10_T10 | 53.92 | 67.46 | 2875.9
+
+LIMITES
+Es un procesador de consumo alto: aproximadamente 26-27% de un nucleo a 48 kHz/256 y 51-53% a 96 kHz/256 en este equipo. El bypass suave sigue procesando y no reduce CPU.
+Las medidas de tiempo dependen de la carga del sistema, frecuencia/temperatura de la CPU y el host. No garantizan ausencia de dropouts; los maximos y P95 se conservan en cpu.csv.
+AutoGain ajusta energia RMS estable: no garantiza igualdad instantanea, ni igualdad perceptual LUFS de cualquier material.
+El sobresampling reduce aliasing, no lo elimina matematicamente por completo.
+No se han realizado medidas comparativas con Waves NLS, Avid HEAT, Crane Song o consolas fisicas. No se puede certificar equivalencia comercial 1:1.
+Compatibilidad de IDs y estado preservada; los proyectos antiguos sonaran distintos debido al cambio de motor.
+
+REPRODUCCION
+Compilar con -DJJ8NLS_BUILD_TESTS=ON. Ejecutar JJ8NLSMeasurements.exe <capturas>; luego python Tests/analyse.py <capturas> <resultados>.
+Benchmark: JJ8NLSMeasurements.exe <resultados> --bench; grafica CPU: python Tests/report_cpu.py <resultados>.
+La dependencia juceaide de JUCE ya instalada se reutilizo para evitar un error C1902 del bootstrap Debug de Visual Studio. La compilacion del plugin es Release.
+Referencia API de sobresampling: https://docs.juce.com/master/classjuce_1_1dsp_1_1Oversampling.html

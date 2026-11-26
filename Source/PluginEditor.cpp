@@ -109,19 +109,19 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (68, "8x NLS Stages (Default Full Jaycen Joshua Chain)", true, curStages == 8);
 
     menu.addSeparator();
-    menu.addSectionHeader ("8x CONSOLE CHAIN VARIANT (0.00 dB L=R)");
+    menu.addSectionHeader ("8x CONSOLE CHAIN VARIANT (Dual Mono)");
     menu.addItem (40, "1. Jaycen Joshua 8x (Default: 5x EMI + 2x SSL + 1x Neve)", true, curVar == 0);
     menu.addItem (41, "2. All SSL Spike 8x (Cleanest Sub / Open 17.5 kHz / Master & Vocals)", true, curVar == 1);
     menu.addItem (42, "3. All Neve Nevo 8x (Warm Even Harmonics / Silky 15 kHz / Vocals & Synths)", true, curVar == 2);
-    menu.addItem (43, "4. All EMI Mike 8x (Max +8.96 dB 27 Hz Sub Cannon / Heavy Drums & 808s)", true, curVar == 3);
+    menu.addItem (43, "4. All EMI Mike 8x (Transformer Punch / Controlled Sub)", true, curVar == 3);
     menu.addItem (44, "5. FL HEAT Hybrid 8x (4x SSL + 4x Neve: +Drive Triode Pares / -Drive Console Impares)", true, curVar == 4);
 
     menu.addSeparator();
     menu.addSectionHeader ("OVERSAMPLING (CHEBYSHEV H2..H16 ANTI-ALIASING)");
-    menu.addItem (10, "1x (Zero Latency / Tracking)",    true, curOS == 0);
-    menu.addItem (11, "2x (Low CPU)",                    true, curOS == 1);
-    menu.addItem (12, "4x (Default / High Quality)",     true, curOS == 2);
-    menu.addItem (13, "8x (Ultra / Mastering)",          true, curOS == 3);
+
+
+
+    menu.addItem (13, "8x (Fixed cascade domain)",          true, curOS == 3);
 
     menu.addSeparator();
     menu.addSectionHeader ("ANALOG CONSOLE NOISE FLOOR (1/f PINK + 50 Hz HUM)");
@@ -129,7 +129,7 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (51, "Noise Floor: OFF (100% Silent Digital Black)",       true, !isNoise);
 
     menu.addSeparator();
-    menu.addSectionHeader ("AUTOGAIN RMS ESTEREO (0.00 dB L=R)");
+    menu.addSectionHeader ("AUTOGAIN RMS ESTEREO (Ganancia enlazada)");
     menu.addItem (20, "LNK / ON: AutoGain Activo (Compensa volumen de las 8 consolas)", true,  isLnk);
     menu.addItem (21, "IND / OFF: Ganancia Bruta Original (Sin AutoGain)",              true, !isLnk);
 
@@ -266,7 +266,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
         {
             if (event.mods.isShiftDown())
             {
-                const int nextOS = (audioProcessor.getOversamplingMode() + 1) % 4;
+                const int nextOS = 3;
                 audioProcessor.setOversamplingMode (nextOS);
                 displayedOSMode = nextOS;
             }
@@ -287,7 +287,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
         {
             if (event.mods.isShiftDown())
             {
-                const int nextOS = (audioProcessor.getOversamplingMode() + 1) % 4;
+                const int nextOS = 3;
                 audioProcessor.setOversamplingMode (nextOS);
                 displayedOSMode = nextOS;
             }

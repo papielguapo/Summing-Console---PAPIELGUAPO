@@ -29,6 +29,8 @@ public:
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
+    void processBlockBypassed (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
@@ -54,8 +56,8 @@ public:
     int getSkinIndex() const noexcept { return skinIndex.load (std::memory_order_relaxed); }
     void setSkinIndex (int newSkin) noexcept { skinIndex.store (juce::jlimit (0, static_cast<int> (flheat::kNumSkins) - 1, newSkin), std::memory_order_relaxed); }
 
-    int getOversamplingMode() const noexcept { return oversamplingMode.load (std::memory_order_relaxed); }
-    void setOversamplingMode (int newOS) noexcept { oversamplingMode.store (juce::jlimit (0, 3, newOS), std::memory_order_relaxed); }
+    int getOversamplingMode() const noexcept { return 3; }
+    void setOversamplingMode (int newOS) noexcept { juce::ignoreUnused (newOS); }
 
     int getConsoleVariant() const noexcept { return consoleVariant.load (std::memory_order_relaxed); }
     void setConsoleVariant (int newVar) noexcept { consoleVariant.store (juce::jlimit (0, 4, newVar), std::memory_order_relaxed); }
@@ -99,7 +101,7 @@ private:
     std::atomic<float>* bypassParam   = nullptr;
 
     std::atomic<int> skinIndex        { flheat::kSkinFLStudio };
-    std::atomic<int> oversamplingMode { 2 };
+    // Legacy quality state is migrated to a fixed 8x processing domain.
     std::atomic<int> consoleVariant   { 0 };
     std::atomic<int> activeStages     { 8 };
     std::atomic<bool> analogNoiseEnabled { true };
@@ -108,7 +110,13 @@ private:
     std::atomic<float> harmonicActivity { 0.0f };
 
     jj8nls::JJ8NLSChainDSP dspEngine;
-    std::array<std::unique_ptr<juce::dsp::Oversampling<float>>, 3> oversamplers;
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
+    juce::AudioBuffer<float> dryDelay;
+    int dryPosition = 0;
+    bool hostBypassed = false;
+    juce::SmoothedValue<float> bypassMix;
+    juce::SmoothedValue<double> toneSmoothed;
+    int toneTick = 0;
     juce::SmoothedValue<double, juce::ValueSmoothingTypes::Linear> driveSmoothed;
     double baseSampleRate  = 48000.0;
     int maxBlockSize       = 512;
