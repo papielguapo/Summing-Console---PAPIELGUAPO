@@ -1,0 +1,36 @@
+{
+  "cpu": {
+    "48000/0": {
+      "before_deadline_percent": 3.621565,
+      "after_deadline_percent": 3.286875,
+      "relative_saving_percent": 9.24158478447853
+    },
+    "48000/4": {
+      "before_deadline_percent": 12.65625,
+      "after_deadline_percent": 11.7544,
+      "relative_saving_percent": 7.125728395061726
+    },
+    "48000/8": {
+      "before_deadline_percent": 26.31095,
+      "after_deadline_percent": 24.9141,
+      "relative_saving_percent": 5.309006326263388
+    },
+    "96000/0": {
+      "before_deadline_percent": 6.691875,
+      "after_deadline_percent": 5.649375,
+      "relative_saving_percent": 15.5785934435416
+    },
+    "96000/4": {
+      "before_deadline_percent": 26.21065,
+      "after_deadline_percent": 21.935650000000003,
+      "relative_saving_percent": 16.310163998222095
+    },
+    "96000/8": {
+      "before_deadline_percent": 57.705,
+      "after_deadline_percent": 48.905649999999994,
+      "relative_saving_percent": 15.248851919244444
+    }
+  },
+  "identical_v211_captures": 48,
+  "automated_null_cases": 10
+}

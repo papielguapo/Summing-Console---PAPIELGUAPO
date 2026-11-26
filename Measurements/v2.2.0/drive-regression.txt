@@ -1,0 +1,710 @@
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS mono/stereo layout
+PASS native mode reports zero latency
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS automation/oversized block remains bounded
+PASS bypass is an exact latency-aligned dry impulse
+PASS block partition invariance: 4096 samples versus 13-sample blocks
+PASS live oversampling switch remains finite and bounded
+PASS requested quality domain becomes active
+PASS host PDC matches native/oversampled mode
+PASS live oversampling switch remains finite and bounded
+PASS requested quality domain becomes active
+PASS host PDC matches native/oversampled mode
+PASS live oversampling switch remains finite and bounded
+PASS requested quality domain becomes active
+PASS host PDC matches native/oversampled mode
+PASS live oversampling switch remains finite and bounded
+PASS requested quality domain becomes active
+PASS host PDC matches native/oversampled mode
+PASS 1 kHz quality transitions contain no abrupt amplitude discontinuity
+PASS native quality survives state round-trip
+PASS native wet impulse starts at sample zero
+PASS zero operator new/new[] calls inside processBlock (including automation and chunks)
+PASS capture contains no gaps or nonfinite samples
+drive211_0_-10.f32 peak=0.176847
+PASS capture contains no gaps or nonfinite samples
+drive211_0_-8.f32 peak=0.176804
+PASS capture contains no gaps or nonfinite samples
+drive211_0_-5.f32 peak=0.176741
+PASS capture contains no gaps or nonfinite samples
+drive211_0_-2.f32 peak=0.176677
+PASS capture contains no gaps or nonfinite samples
+drive211_0_0.f32 peak=0.176635
+PASS capture contains no gaps or nonfinite samples
+drive211_0_1.f32 peak=0.176583
+PASS capture contains no gaps or nonfinite samples
+drive211_0_5.f32 peak=0.176321
+PASS capture contains no gaps or nonfinite samples
+drive211_0_10.f32 peak=0.17587
+PASS capture contains no gaps or nonfinite samples
+drive_ref_0_0.f32 peak=0.176635
+PASS capture contains no gaps or nonfinite samples
+drive_ref_0_1.f32 peak=0.176583
+PASS capture contains no gaps or nonfinite samples
+drive_ref_0_5.f32 peak=0.176321
+PASS capture contains no gaps or nonfinite samples
+drive_ref_0_10.f32 peak=0.17587
+PASS capture contains no gaps or nonfinite samples
+drive_fr_0_-10.f32 peak=5.85473e-05
+PASS capture contains no gaps or nonfinite samples
+drive_fr_0_1.f32 peak=5.85473e-05
+PASS capture contains no gaps or nonfinite samples
+drive211_1_-10.f32 peak=0.178744
+PASS capture contains no gaps or nonfinite samples
+drive211_1_-8.f32 peak=0.178716
+PASS capture contains no gaps or nonfinite samples
+drive211_1_-5.f32 peak=0.178673
+PASS capture contains no gaps or nonfinite samples
+drive211_1_-2.f32 peak=0.178631
+PASS capture contains no gaps or nonfinite samples
+drive211_1_0.f32 peak=0.178603
+PASS capture contains no gaps or nonfinite samples
+drive211_1_1.f32 peak=0.178567
+PASS capture contains no gaps or nonfinite samples
+drive211_1_5.f32 peak=0.178382
+PASS capture contains no gaps or nonfinite samples
+drive211_1_10.f32 peak=0.178063
+PASS capture contains no gaps or nonfinite samples
+drive_ref_1_0.f32 peak=0.178603
+PASS capture contains no gaps or nonfinite samples
+drive_ref_1_1.f32 peak=0.178567
+PASS capture contains no gaps or nonfinite samples
+drive_ref_1_5.f32 peak=0.178382
+PASS capture contains no gaps or nonfinite samples
+drive_ref_1_10.f32 peak=0.178063
+PASS capture contains no gaps or nonfinite samples
+drive_fr_1_-10.f32 peak=6.01678e-05
+PASS capture contains no gaps or nonfinite samples
+drive_fr_1_1.f32 peak=6.01678e-05
+PASS capture contains no gaps or nonfinite samples
+drive211_2_-10.f32 peak=0.176176
+PASS capture contains no gaps or nonfinite samples
+drive211_2_-8.f32 peak=0.176113
+PASS capture contains no gaps or nonfinite samples
+drive211_2_-5.f32 peak=0.176018
+PASS capture contains no gaps or nonfinite samples
+drive211_2_-2.f32 peak=0.175923
+PASS capture contains no gaps or nonfinite samples
+drive211_2_0.f32 peak=0.17586
+PASS capture contains no gaps or nonfinite samples
+drive211_2_1.f32 peak=0.175785
+PASS capture contains no gaps or nonfinite samples
+drive211_2_5.f32 peak=0.175407
+PASS capture contains no gaps or nonfinite samples
+drive211_2_10.f32 peak=0.174762
+PASS capture contains no gaps or nonfinite samples
+drive_ref_2_0.f32 peak=0.17586
+PASS capture contains no gaps or nonfinite samples
+drive_ref_2_1.f32 peak=0.175785
+PASS capture contains no gaps or nonfinite samples
+drive_ref_2_5.f32 peak=0.175407
+PASS capture contains no gaps or nonfinite samples
+drive_ref_2_10.f32 peak=0.174762
+PASS capture contains no gaps or nonfinite samples
+drive_fr_2_-10.f32 peak=5.77277e-05
+PASS capture contains no gaps or nonfinite samples
+drive_fr_2_1.f32 peak=5.77277e-05
+PASS capture contains no gaps or nonfinite samples
+drive211_3_-10.f32 peak=0.176172
+PASS capture contains no gaps or nonfinite samples
+drive211_3_-8.f32 peak=0.176128
+PASS capture contains no gaps or nonfinite samples
+drive211_3_-5.f32 peak=0.176063
+PASS capture contains no gaps or nonfinite samples
+drive211_3_-2.f32 peak=0.175998
+PASS capture contains no gaps or nonfinite samples
+drive211_3_0.f32 peak=0.175955
+PASS capture contains no gaps or nonfinite samples
+drive211_3_1.f32 peak=0.175902
+PASS capture contains no gaps or nonfinite samples
+drive211_3_5.f32 peak=0.175633
+PASS capture contains no gaps or nonfinite samples
+drive211_3_10.f32 peak=0.175171
+PASS capture contains no gaps or nonfinite samples
+drive_ref_3_0.f32 peak=0.175955
+PASS capture contains no gaps or nonfinite samples
+drive_ref_3_1.f32 peak=0.175902
+PASS capture contains no gaps or nonfinite samples
+drive_ref_3_5.f32 peak=0.175633
+PASS capture contains no gaps or nonfinite samples
+drive_ref_3_10.f32 peak=0.175171
+PASS capture contains no gaps or nonfinite samples
+drive_fr_3_-10.f32 peak=5.80346e-05
+PASS capture contains no gaps or nonfinite samples
+drive_fr_3_1.f32 peak=5.80346e-05
+PASS capture contains no gaps or nonfinite samples
+drive211_4_-10.f32 peak=0.176351
+PASS capture contains no gaps or nonfinite samples
+drive211_4_-8.f32 peak=0.176666
+PASS capture contains no gaps or nonfinite samples
+drive211_4_-5.f32 peak=0.177024
+PASS capture contains no gaps or nonfinite samples
+drive211_4_-2.f32 peak=0.177263
+PASS capture contains no gaps or nonfinite samples
+drive211_4_0.f32 peak=0.177392
+PASS capture contains no gaps or nonfinite samples
+drive211_4_1.f32 peak=0.177349
+PASS capture contains no gaps or nonfinite samples
+drive211_4_5.f32 peak=0.177075
+PASS capture contains no gaps or nonfinite samples
+drive211_4_10.f32 peak=0.176442
+PASS capture contains no gaps or nonfinite samples
+drive_ref_4_-10.f32 peak=0.176351
+PASS capture contains no gaps or nonfinite samples
+drive_ref_4_-5.f32 peak=0.177024
+PASS capture contains no gaps or nonfinite samples
+drive_ref_4_0.f32 peak=0.177392
+PASS capture contains no gaps or nonfinite samples
+drive_ref_4_1.f32 peak=0.177349
+PASS capture contains no gaps or nonfinite samples
+drive_ref_4_5.f32 peak=0.177075
+PASS capture contains no gaps or nonfinite samples
+drive_ref_4_10.f32 peak=0.176442
+FAILURES=0

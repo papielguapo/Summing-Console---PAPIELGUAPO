@@ -4,6 +4,10 @@
 #include <cmath>
 #include <cstdint>
 #include <algorithm>
+#if defined(_M_X64) || defined(__SSE2__)
+#include <emmintrin.h>
+#define JJ8NLS_STEREO_SSE2 1
+#endif
 #include <juce_audio_basics/juce_audio_basics.h>
 
 namespace jj8nls
@@ -307,12 +311,16 @@ namespace jj8nls
                     st.modelAmount.setCurrentAndTargetValue (static_cast<double> (slots[i].model));
                     st.wet.reset (sampleRate, 0.030);
                     st.wet.setCurrentAndTargetValue (i < activeStageCount ? 1.0 : 0.0);
+                    st.wet.setTargetValue (slots[i].enabled && i < activeStageCount ? 1.0 : 0.0);
                     for (auto& f : st.filters) f.slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));
                 }
             reset();
             updateAllStageFilters();
             updateGlobalFilters();
             for (auto& ch : stageStates) for (auto& st : ch) for (auto& f : st.filters) f.snap();
+#if JJ8NLS_STEREO_SSE2
+            for (auto& bank : stereoBanks) bank.moving = 0;
+#endif
             for (int ch=0; ch<2; ++ch)
             {
                 subsonic[ch].snap(); outputDC[ch].snap(); preEmphasis[ch].snap(); deEmphasis[ch].snap(); outputAir[ch].snap();
@@ -321,6 +329,9 @@ namespace jj8nls
 
         void reset() noexcept
         {
+#if JJ8NLS_STEREO_SSE2
+            for (auto& bank : stereoBanks) bank.active = false;
+#endif
             for (auto& ch : stageStates)
                 for (auto& st : ch)
                     st.reset();
@@ -364,7 +375,7 @@ namespace jj8nls
             if (std::abs (tone-lastRawTone) < 1.0e-7) return;
             lastRawTone = tone;
             // Left: uniform/open; right: weight/warmth. Center retains the v2.0 voicing.
-            subBumpScale = tone < 0.0 ? 1.0+tone/10.0 : 1.0+0.35*tone/10.0;
+            subBumpScale = tone < 0.0 ? 1.0+tone/10.0 : 1.0;
             if (currentConsoleVariant == 4) subBumpScale *= 0.60;
             updateAllStageFilters();
         }
@@ -377,6 +388,7 @@ namespace jj8nls
             auto& cur = slots[static_cast<size_t> (index)];
             const bool modelChanged = (cur.model != cfg.model);
             cur = cfg;
+            wetTargetsDirty = true;
             if (modelChanged)
                 updateStageFilter (index);
         }
@@ -429,12 +441,21 @@ namespace jj8nls
         void setSlotEnabled (int index, bool en) noexcept
         {
             if (index >= 0 && index < kNumSlots)
+            {
                 slots[static_cast<size_t> (index)].enabled = en;
+                wetTargetsDirty = true;
+            }
         }
 
         void setMasterNoiseEnabled (bool en) noexcept { masterNoiseEnabled = en; noiseMix.setTargetValue (en ? 1.0 : 0.0); }
         bool getMasterNoiseEnabled() const noexcept   { return masterNoiseEnabled; }
-        void setActiveStageCount (int count) noexcept { activeStageCount = std::clamp (count, 1, kNumSlots); }
+        void setActiveStageCount (int count) noexcept
+        {
+            count = std::clamp (count, 1, kNumSlots);
+            if (count == activeStageCount) return;
+            activeStageCount = count;
+            wetTargetsDirty = true;
+        }
         int getActiveStageCount() const noexcept      { return activeStageCount; }
         void setAutoPeakRmsBalance (bool en) noexcept { juce::ignoreUnused (en); }
         void setAutoGainEnabled (bool en) noexcept    { autoGainEnabled = en; autoGainMix.setTargetValue (en ? 1.0 : 0.0); }
@@ -444,6 +465,7 @@ namespace jj8nls
 
         void processSampleStereo (float& left, float& right) noexcept
         {
+            refreshWetTargets();
             double xL = static_cast<double> (left);
             double xR = static_cast<double> (right);
             const double agMix = autoGainMix.getNextValue();
@@ -468,9 +490,24 @@ namespace jj8nls
             for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
             {
                 const auto& cfg = slots[static_cast<size_t> (slotIdx)];
-                for (auto& ch : stageStates)
-                    ch[slotIdx].wet.setTargetValue (cfg.enabled && slotIdx < activeStageCount ? 1.0 : 0.0);
 
+#if JJ8NLS_STEREO_SSE2
+                auto& pair = stereoBanks[slotIdx];
+                if (pair.moving == 0)
+                {
+                    auto& leftStage = stageStates[0][slotIdx];
+                    auto& rightStage = stageStates[1][slotIdx];
+                    if (!pair.active)
+                        pair.load (leftStage, rightStage);
+                    auto y = _mm_set_pd (xR, xL);
+                    for (auto& f : pair.filters)
+                        y = f.process (y);
+                    xL = finishStage (xL, _mm_cvtsd_f64 (y), cfg, leftStage, humSample, stageRefL);
+                    xR = finishStage (xR, _mm_cvtsd_f64 (_mm_unpackhi_pd (y,y)), cfg, rightStage, humSample, stageRefR);
+                    continue;
+                }
+                --pair.moving;
+#endif
                 xL = processSingleStage (xL, 0, slotIdx, cfg, humSample, stageRefL);
                 xR = processSingleStage (xR, 1, slotIdx, cfg, humSample, stageRefR);
             }
@@ -516,6 +553,7 @@ namespace jj8nls
 
         void processSampleMono (float& sample) noexcept
         {
+            refreshWetTargets();
             double x = static_cast<double> (sample);
             const double agMix = autoGainMix.getNextValue();
             currentNoiseMix = noiseMix.getNextValue();
@@ -537,9 +575,10 @@ namespace jj8nls
             for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
             {
                 const auto& cfg = slots[static_cast<size_t> (slotIdx)];
-                for (auto& ch : stageStates)
-                    ch[slotIdx].wet.setTargetValue (cfg.enabled && slotIdx < activeStageCount ? 1.0 : 0.0);
 
+#if JJ8NLS_STEREO_SSE2
+                flushStereoBank (slotIdx);
+#endif
                 x = processSingleStage (x, 0, slotIdx, cfg, humSample, stageRef);
             }
 
@@ -578,6 +617,66 @@ namespace jj8nls
             return (static_cast<double> (val >> 11) * (1.0 / 9007199254740992.0)) * 2.0 - 1.0;
         }
 
+#if JJ8NLS_STEREO_SSE2
+        struct StereoSection
+        {
+            __m128d b0, b1, b2, a1, a2, z1, z2;
+            __m128d process (__m128d x) noexcept
+            {
+                const auto y = _mm_add_pd (_mm_mul_pd (b0,x), z1);
+                z1 = _mm_add_pd (_mm_sub_pd (_mm_mul_pd (b1,x), _mm_mul_pd (a1,y)), z2);
+                z2 = _mm_sub_pd (_mm_mul_pd (b2,x), _mm_mul_pd (a2,y));
+                return y;
+            }
+        };
+        struct StereoBank
+        {
+            StereoSection filters[5];
+            bool active = false;
+            int moving = 0;
+
+            void load (const StageChannelState& left, const StageChannelState& right) noexcept
+            {
+                for (size_t i = 0; i < left.filters.size(); ++i)
+                {
+                    const auto& l = left.filters[i];
+                    const auto& r = right.filters[i];
+                    filters[i] = { _mm_set_pd (r.b0,l.b0), _mm_set_pd (r.b1,l.b1),
+                                   _mm_set_pd (r.b2,l.b2), _mm_set_pd (r.a1,l.a1),
+                                   _mm_set_pd (r.a2,l.a2), _mm_set_pd (r.z1,l.z1),
+                                   _mm_set_pd (r.z2,l.z2) };
+                }
+                active = true;
+            }
+        };
+        std::array<StereoBank, kNumSlots> stereoBanks {};
+        void flushStereoBank (int index) noexcept
+        {
+            auto& bank = stereoBanks[index];
+            if (!bank.active) return;
+            for (size_t i = 0; i < stageStates[0][index].filters.size(); ++i)
+            {
+                const auto& pair = bank.filters[i];
+                auto& l = stageStates[0][index].filters[i];
+                auto& r = stageStates[1][index].filters[i];
+                _mm_storel_pd (&l.z1, pair.z1); _mm_storeh_pd (&r.z1, pair.z1);
+                _mm_storel_pd (&l.z2, pair.z2); _mm_storeh_pd (&r.z2, pair.z2);
+            }
+            bank.active = false;
+        }
+#endif
+        bool wetTargetsDirty = false;
+        void refreshWetTargets() noexcept
+        {
+            if (!wetTargetsDirty) return;
+            for (int i = 0; i < kNumSlots; ++i)
+            {
+                const double wet = slots[i].enabled && i < activeStageCount ? 1.0 : 0.0;
+                for (auto& channel : stageStates) channel[i].wet.setTargetValue (wet);
+            }
+            wetTargetsDirty = false;
+        }
+
         double processSingleStage (double x,
                                    int ch,
                                    int slotIdx,
@@ -588,9 +687,14 @@ namespace jj8nls
             auto& st = stageStates[static_cast<size_t> (ch)][static_cast<size_t> (slotIdx)];
 
             double y = x;
-
             for (auto& biq : st.filters)
                 y = biq.process (y);
+            return finishStage (x, y, cfg, st, humSample, stageRef);
+        }
+
+        double finishStage (double x, double y, const SlotConfig& cfg, StageChannelState& st,
+                            double humSample, double& stageRef) noexcept
+        {
 
             y = applyConsoleHarmonics (y, cfg.model, cfg.drive, st, stageRef);
 
@@ -648,7 +752,7 @@ namespace jj8nls
             const double opening = std::max (0.0, -t);
             const double weight = std::max (0.0, t);
             // Audible balance is independent of the reciprocal saturation-emphasis pair.
-            const double airDb = 1.25 * opening - 1.75 * weight;
+            const double airDb = (1.25 * opening - 1.75 * weight) * (0.65 + 0.35 * std::abs (t));
             for (int ch=0; ch<2; ++ch)
             {
                 const double slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));
@@ -661,7 +765,7 @@ namespace jj8nls
                 inverse.b0=1.0/pre.b0; inverse.b1=pre.a1/pre.b0; inverse.b2=pre.a2/pre.b0;
                 inverse.a1=pre.b1/pre.b0; inverse.a2=pre.b2/pre.b0;
                 deEmphasis[ch].setTarget (inverse);
-                outputAir[ch].setTarget (BiquadSection::makeHighShelf (8000.0, 0.70710678, airDb, sampleRate));
+                outputAir[ch].setTarget (BiquadSection::makeHighShelf (t < 0.0 ? 6000.0 : 8000.0, 0.70710678, airDb, sampleRate));
             }
         }
 
@@ -674,6 +778,10 @@ namespace jj8nls
 
         void updateStageFilter (int index) noexcept
         {
+#if JJ8NLS_STEREO_SSE2
+            flushStereoBank (index);
+            stereoBanks[index].moving = 0;
+#endif
             struct Curve { double bump, punch, dip, air, airHz; };
             static constexpr Curve curves[] { {0.24, 0.08, -0.10, -0.19, 17500.0},
                                                {1.12, 0.36, -0.30, -0.36, 16000.0},
@@ -695,6 +803,10 @@ namespace jj8nls
                 st.filters[2].setTarget (BiquadSection::makePeaking (52.8*t, 2.0, c.punch*punchScale, sampleRate));
                 st.filters[3].setTarget (BiquadSection::makePeaking (92.0*t, 1.4, c.dip*dipScale, sampleRate));
                 st.filters[4].setTarget (BiquadSection::makeHighShelf (c.airHz*t, 0.65, c.air*rolloffScale, sampleRate));
+#if JJ8NLS_STEREO_SSE2
+                for (const auto& f : st.filters)
+                    stereoBanks[index].moving = std::max (stereoBanks[index].moving, f.coefficientsMoving);
+#endif
             }
         }
 
@@ -730,3 +842,5 @@ namespace jj8nls
         std::array<std::array<StageChannelState, kNumSlots>, 2> stageStates;
     };
 } // namespace jj8nls
+
+#undef JJ8NLS_STEREO_SSE2

@@ -6,6 +6,10 @@
 #define jj8nls tone20
 #include "ToneBaselineDSP.h"
 #undef jj8nls
+#define jj8nls scalar220
+#include "ScalarReference220.h"
+#undef jj8nls
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -197,6 +201,53 @@ int main(int argc,char** argv)
     juce::ScopedJuceInitialiser_GUI initialiseJuce;
     const std::filesystem::path out=argc>1 ? argv[1] : "measurements"; std::filesystem::create_directories(out);
     if(argc>2 && std::string(argv[2])=="--bench") { benchmark(out); return 0; }
+    if (argc > 2 && std::string(argv[2]) == "--null")
+    {
+        for (int channels : {1, 2}) for (int variant = 0; variant < 5; ++variant)
+        {
+            jj8nls::JJ8NLSChainDSP optimized;
+            scalar220::JJ8NLSChainDSP reference;
+            auto setup = [&](auto& engine) {
+                engine.setConsoleVariant(variant);
+                engine.setMasterNoiseEnabled(false);
+                engine.prepare(384000);
+            };
+            setup(optimized);
+            setup(reference);
+            bool identical = true;
+            for (int n = 0; n < 120000; ++n)
+            {
+                if (n >= 20000 && n < 60000 && n % 1201 == 0)
+                {
+                    auto automate = [&](auto& engine) {
+                        engine.setBipolarDrive(10.0 * std::sin(n * 0.013));
+                        engine.setBipolarTone(10.0 * std::cos(n * 0.017));
+                        engine.setSlotEnabled(2, n % 2 == 0);
+                        engine.setActiveStageCount(1 + n % 8);
+                    };
+                    automate(optimized);
+                    automate(reference);
+                }
+                float l = static_cast<float>(0.5 * std::sin(n * 0.03));
+                float r = static_cast<float>(0.3 * std::cos(n * 0.11));
+                float a = l, b = r;
+                if (channels == 2 && (n < 17000 || n >= 18000)) {
+                    optimized.processSampleStereo(l, r);
+                    reference.processSampleStereo(a, b);
+                } else {
+                    optimized.processSampleMono(l);
+                    reference.processSampleMono(a);
+                }
+                const bool same = std::memcmp(&l, &a, sizeof(float)) == 0
+                          && std::memcmp(&r, &b, sizeof(float)) == 0;
+                if (identical && !same)
+                    std::cout << "First difference at sample " << n << ", variant " << variant << ", channels " << channels << std::endl;
+                identical &= same;
+            }
+            check(identical, "scalar null with fixed controls and automated Drive/Tone/stages");
+        }
+        return failures ? 1 : 0;
+    }
     regressions();
     if (argc>2 && std::string(argv[2])=="--regressions-only") return failures ? 1 : 0;
     if (argc>2 && std::string(argv[2])=="--drive-only")

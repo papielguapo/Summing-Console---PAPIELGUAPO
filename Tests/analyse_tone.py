@@ -15,7 +15,7 @@ def load(name): return np.fromfile(root/(name+'.f32'),dtype='<f4').astype(float)
 def db(x): return 20*np.log10(np.maximum(abs(x),1e-16))
 def response(name):
     x=load(name); return np.fft.rfftfreq(len(x),1/48000),np.fft.rfft(x,axis=0)/1.e-4
-m={'version':'2.1.0','sample_rate':48000,'variants':[],'checks':[]}
+m={'version':'2.2.0','sample_rate':48000,'variants':[],'checks':[]}
 def check(name,passed): m['checks'].append({'name':name,'pass':bool(passed)})
 fig=plt.figure(figsize=(16,12),layout='constrained'); gs=fig.add_gridspec(3,2,height_ratios=[1.3,1,1])
 axes=[fig.add_subplot(gs[0,:])]+[fig.add_subplot(gs[r,c]) for r in [1,2] for c in [0,1]]
@@ -36,7 +36,7 @@ for i,(name,ax) in enumerate(zip(names,axes)):
     check(name+': left opens highs',left['16000']>center['16000']+.8)
     check(name+': right softens highs',right['16000']<center['16000']-.6)
     check(name+': left controls 27 Hz',left['27']<center['27']-.35)
-    check(name+': right adds controlled weight',right['27']>center['27']+.1)
+    check(name+': right adds controlled weight',abs(right['27']-center['27'])<.15 and right['53']>center['53']+.05)
     check(name+': right does not deepen dip',right['92']>=center['92']-.15)
     check(name+': left reduces punch contrast',left['53']<center['53']-.05)
     check(name+': bass gain below 3.5 dB',max(right[k] for k in ['27','53','92'])<3.5)
@@ -45,8 +45,8 @@ for i,(name,ax) in enumerate(zip(names,axes)):
     ax.set_title(name,color='#ffb32d',weight='bold'); ax.set_ylabel('Ganancia (dB)'); ax.set_xlabel('Frecuencia (Hz)')
     if i==0: ax.legend(ncol=5,fontsize=10,loc='upper right')
     m['variants'].append(row)
-fig.suptitle('TONE 2.1 · IZQUIERDA ABIERTA / DERECHA CALIDA\nHP fijo 21 Hz · 8x IIR · centro conservado',fontsize=18,color='#ffb32d',weight='bold')
-fig.savefig(out/'tone_2.1_respuesta.png',dpi=150); plt.close(fig)
+fig.suptitle('TONE 2.2 · IZQUIERDA ABIERTA / DERECHA CALIDA\nHP fijo 21 Hz · 8x IIR · centro conservado',fontsize=18,color='#ffb32d',weight='bold')
+fig.savefig(out/'tone_2.2_respuesta.png',dpi=150); plt.close(fig)
 m['aliasing']={}
 for factor in [1,4,8]:
     for tone in [-10,10]:
@@ -63,10 +63,10 @@ if (out/'cpu.csv').exists():
         for j,y in enumerate(yy): ax.text(j,y+1,f'{y:.1f}%',ha='center',color='#d4e7ee')
         ax.set_xticks(range(3)); ax.set_xticklabels(['0x / nativo','4x','8x']); ax.set_ylim(0,max(65,max(pp)+6)); ax.grid(True,axis='y',alpha=.4); ax.set_ylabel('% del plazo de un nucleo'); ax.set_title(f'{rate//1000} kHz · 256 muestras',color='#ffb32d')
         check(f'{rate} Hz: native < 4x < 8x CPU',yy[0]<yy[1]<yy[2])
-    fig.suptitle('CPU 2.1 · Intel Core i7-9750H · estereo\nMediana y P95 · ruido y AutoGain ON · sin GUI/DAW',fontsize=15,color='#ffb32d')
-    fig.savefig(out/'tone_2.1_cpu.png',dpi=150); plt.close(fig)
-(out/'tone_2.1_mediciones.json').write_text(json.dumps(m,indent=2),encoding='utf-8')
-with (out/'tone_2.1_respuesta.csv').open('w',newline='',encoding='utf-8') as file:
+    fig.suptitle('CPU 2.2 · Intel Core i7-9750H · estereo\nMediana y P95 · ruido y AutoGain ON · sin GUI/DAW',fontsize=15,color='#ffb32d')
+    fig.savefig(out/'tone_2.2_cpu.png',dpi=150); plt.close(fig)
+(out/'tone_2.2_mediciones.json').write_text(json.dumps(m,indent=2),encoding='utf-8')
+with (out/'tone_2.2_respuesta.csv').open('w',newline='',encoding='utf-8') as file:
     w=csv.writer(file); w.writerow(['variant','tone','frequency_hz','gain_db'])
     for row in m['variants']:
         for tone,values in row['tones'].items():

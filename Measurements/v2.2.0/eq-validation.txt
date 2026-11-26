@@ -1,0 +1,81 @@
+PASS Jaycen 8x: AutoGain Tone -10 within 0.1 dB
+PASS Jaycen 8x: AutoGain Tone +0 within 0.1 dB
+PASS Jaycen 8x: AutoGain Tone +10 within 0.1 dB
+PASS Jaycen 8x: center identical to v2.0
+PASS Jaycen 8x: left removes 92 Hz dip
+PASS Jaycen 8x: left opens highs
+PASS Jaycen 8x: right softens highs
+PASS Jaycen 8x: left controls 27 Hz
+PASS Jaycen 8x: right adds controlled weight
+PASS Jaycen 8x: right does not deepen dip
+PASS Jaycen 8x: left reduces punch contrast
+PASS Jaycen 8x: bass gain below 3.5 dB
+PASS SSL Spike 8x: AutoGain Tone -10 within 0.1 dB
+PASS SSL Spike 8x: AutoGain Tone +0 within 0.1 dB
+PASS SSL Spike 8x: AutoGain Tone +10 within 0.1 dB
+PASS SSL Spike 8x: center identical to v2.0
+PASS SSL Spike 8x: left removes 92 Hz dip
+PASS SSL Spike 8x: left opens highs
+PASS SSL Spike 8x: right softens highs
+PASS SSL Spike 8x: left controls 27 Hz
+PASS SSL Spike 8x: right adds controlled weight
+PASS SSL Spike 8x: right does not deepen dip
+PASS SSL Spike 8x: left reduces punch contrast
+PASS SSL Spike 8x: bass gain below 3.5 dB
+PASS Neve Nevo 8x: AutoGain Tone -10 within 0.1 dB
+PASS Neve Nevo 8x: AutoGain Tone +0 within 0.1 dB
+PASS Neve Nevo 8x: AutoGain Tone +10 within 0.1 dB
+PASS Neve Nevo 8x: center identical to v2.0
+PASS Neve Nevo 8x: left removes 92 Hz dip
+PASS Neve Nevo 8x: left opens highs
+PASS Neve Nevo 8x: right softens highs
+PASS Neve Nevo 8x: left controls 27 Hz
+PASS Neve Nevo 8x: right adds controlled weight
+PASS Neve Nevo 8x: right does not deepen dip
+PASS Neve Nevo 8x: left reduces punch contrast
+PASS Neve Nevo 8x: bass gain below 3.5 dB
+PASS EMI Mike 8x: AutoGain Tone -10 within 0.1 dB
+PASS EMI Mike 8x: AutoGain Tone +0 within 0.1 dB
+PASS EMI Mike 8x: AutoGain Tone +10 within 0.1 dB
+PASS EMI Mike 8x: center identical to v2.0
+PASS EMI Mike 8x: left removes 92 Hz dip
+PASS EMI Mike 8x: left opens highs
+PASS EMI Mike 8x: right softens highs
+PASS EMI Mike 8x: left controls 27 Hz
+PASS EMI Mike 8x: right adds controlled weight
+PASS EMI Mike 8x: right does not deepen dip
+PASS EMI Mike 8x: left reduces punch contrast
+PASS EMI Mike 8x: bass gain below 3.5 dB
+PASS HEAT Hybrid 8x: AutoGain Tone -10 within 0.1 dB
+PASS HEAT Hybrid 8x: AutoGain Tone +0 within 0.1 dB
+PASS HEAT Hybrid 8x: AutoGain Tone +10 within 0.1 dB
+PASS HEAT Hybrid 8x: center identical to v2.0
+PASS HEAT Hybrid 8x: left removes 92 Hz dip
+PASS HEAT Hybrid 8x: left opens highs
+PASS HEAT Hybrid 8x: right softens highs
+PASS HEAT Hybrid 8x: left controls 27 Hz
+PASS HEAT Hybrid 8x: right adds controlled weight
+PASS HEAT Hybrid 8x: right does not deepen dip
+PASS HEAT Hybrid 8x: left reduces punch contrast
+PASS HEAT Hybrid 8x: bass gain below 3.5 dB
+PASS 4x alias Tone -10 below -80 dBc
+PASS 4x alias Tone +10 below -80 dBc
+PASS 8x alias Tone -10 below -80 dBc
+PASS 8x alias Tone +10 below -80 dBc
+{
+  "aliasing": {
+    "1x_tone_-10": -29.30952252017415,
+    "1x_tone_10": -37.36895248091152,
+    "4x_tone_-10": -120.28596160878041,
+    "4x_tone_10": -126.03425170701392,
+    "8x_tone_-10": -111.73867549275406,
+    "8x_tone_10": -121.61449143243401
+  },
+  "centers": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ]
+}
