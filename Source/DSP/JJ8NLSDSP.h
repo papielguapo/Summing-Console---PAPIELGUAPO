@@ -513,7 +513,7 @@ namespace jj8nls
             if (humPhase50 >= 2.0 * kPi)  humPhase50  -= 2.0 * kPi;
             if (humPhase100 >= 2.0 * kPi) humPhase100 -= 2.0 * kPi;
 
-            const double humSample = 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100);
+            const double humSample = currentNoiseMix > 0.0 ? 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100) : 0.0;
 
             for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
             {
@@ -608,7 +608,7 @@ namespace jj8nls
             if (humPhase50 >= 2.0 * kPi)  humPhase50  -= 2.0 * kPi;
             if (humPhase100 >= 2.0 * kPi) humPhase100 -= 2.0 * kPi;
 
-            const double humSample = 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100);
+            const double humSample = currentNoiseMix > 0.0 ? 3.2e-7 * std::sin (humPhase50) + 1.8e-7 * std::sin (humPhase100) : 0.0;
 
             for (int slotIdx = 0; slotIdx < kNumSlots; ++slotIdx)
             {
@@ -763,7 +763,14 @@ namespace jj8nls
                             double humSample, double& stageRef) noexcept
         {
 
-            y = applyConsoleHarmonics (y, cfg.model, cfg.drive, st, stageRef);
+            const double wet = st.wet.getNextValue();
+            if (wet != 0.0)
+                y = applyConsoleHarmonics (y, cfg.model, cfg.drive, st, stageRef);
+            else
+            {
+                st.modelAmount.getNextValue();
+                st.driveGain.getNextValue();
+            }
 
             if (cfg.noiseOn && currentNoiseMix > 0.0)
             {
@@ -778,7 +785,7 @@ namespace jj8nls
 
             y *= st.trimGain.getNextValue();
 
-            return x + st.wet.getNextValue() * (y - x);
+            return x + wet * (y - x);
         }
 
         double applyConsoleHarmonics (double s,
@@ -795,6 +802,7 @@ namespace jj8nls
             const double slotDriveGain = st.driveGain.getNextValue();
             if (currentConsoleVariant == 0)
             {
+                if (mix == 0.0) return s;
                 const double driveGain = slotDriveGain * st.referenceInputScale;
                 const double driven = s * driveGain;
                 const double pos = (std::clamp (driven, -1.0, 1.0) + 1.0) * 256.0;
@@ -802,7 +810,9 @@ namespace jj8nls
                 const auto* table = st.referenceResidual;
                 const double delta = table[i] + (pos-i) * (table[i+1]-table[i]);
                 // Smooth limiting past the measured +/-1 input range.
-                const double excess = std::max (0.0, std::abs (driven) - 1.0);
+                if (std::abs (driven) <= 1.0)
+                    return driveGain == 1.0 ? s + mix * delta : s + mix * (delta / driveGain);
+                const double excess = std::abs (driven) - 1.0;
                 const double tail = std::copysign (excess * excess / (1.0 + excess), driven);
                 return s + mix * ((delta - tail) / driveGain);
             }
@@ -851,8 +861,8 @@ namespace jj8nls
                 if (jaycen && t < 0.0)
                 {
                     // Reduce the console crest near 13 kHz mostly in the last half of Tight.
-                    const double cut = (ch == 0 ? -1.45 : -1.95) * opening * opening;
-                    outputAir[ch].setTarget (BiquadSection::makePeaking (13500.0, 1.45, cut, sampleRate));
+                    const double cut = (ch == 0 ? -1.612 : -2.621) * opening * opening;
+                    outputAir[ch].setTarget (BiquadSection::makePeaking (13000.0, 0.68, cut, sampleRate));
                 }
                 else outputAir[ch].setTarget (BiquadSection::makeHighShelf (jaycen ? (t < 0.0 ? 8000.0 : 16000.0) : (t < 0.0 ? 6000.0 : 8000.0), 0.70710678, airDb, sampleRate));
             }

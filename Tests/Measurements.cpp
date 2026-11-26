@@ -9,6 +9,7 @@
 #define jj8nls scalar220
 #include "ScalarReference220.h"
 #undef jj8nls
+#include "Reference243.h"
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -211,10 +212,75 @@ void benchmark(const std::filesystem::path& out)
     }
 }
 
+template<class Engine>
+double timeCascade(int stages, bool noise)
+{
+    Engine e;
+    e.setActiveStageCount(stages); e.setMasterNoiseEnabled(noise); e.prepare(384000);
+    std::vector<float> input(2048), elapsed;
+    for (int n=0;n<2048;++n) input[n]=static_cast<float>(0.3*std::sin(n*0.091));
+    volatile float sink=0;
+    for (int block=0;block<240;++block)
+    {
+        auto start=std::chrono::steady_clock::now();
+        float sum=0;
+        for (float x:input) {float y=x; e.processSampleStereo(x,y); sum+=x+y;}
+        sink=sum;
+        if (block>=60) elapsed.push_back(std::chrono::duration<float,std::micro>(std::chrono::steady_clock::now()-start).count());
+    }
+    std::sort(elapsed.begin(),elapsed.end());
+    return elapsed[elapsed.size()/2];
+}
+
 int main(int argc,char** argv)
 {
     juce::ScopedJuceInitialiser_GUI initialiseJuce;
     const std::filesystem::path out=argc>1 ? argv[1] : "measurements"; std::filesystem::create_directories(out);
+    if (argc>2 && std::string(argv[2])=="--cpu243")
+    {
+        std::ofstream csv(out/"cascade-cpu.csv");
+        csv<<"pass,stages,noise,before_us,after_us\n";
+        for (int pass=0;pass<5;++pass) for(int stages:{8,6,4}) for(bool noise:{false,true})
+        {
+            double before,after;
+            if(pass%2==0) before=timeCascade<ref243::JJ8NLSChainDSP>(stages,noise);
+            after=timeCascade<jj8nls::JJ8NLSChainDSP>(stages,noise);
+            if(pass%2!=0) before=timeCascade<ref243::JJ8NLSChainDSP>(stages,noise);
+            csv<<pass<<','<<stages<<','<<noise<<','<<before<<','<<after<<'\n';
+        }
+        return 0;
+    }
+    if (argc>2 && std::string(argv[2])=="--null243")
+    {
+        for (int channels:{1,2})
+        {
+            ref243::JJ8NLSChainDSP old;
+            jj8nls::JJ8NLSChainDSP now;
+            old.prepare(384000); now.prepare(384000);
+            bool exact=true;
+            for(int n=0;n<240000;++n)
+            {
+                if(n%16000==0 || n%16000==600)
+                {
+                    auto update=[&](auto& e){
+                        e.setSlotEnabled(2,(n/16000)%2==0);
+                        e.setActiveStageCount(4+(n/16000)%5);
+                        e.setMasterNoiseEnabled((n/16000)%3!=0);
+                        e.setBipolarTone(10*std::sin(n*.00021));
+                        e.setBipolarDrive((n/16000)%4==0?-10:10*std::cos(n*.00031));
+                    };
+                    update(old); update(now);
+                }
+                float a=static_cast<float>(1.4*std::sin(n*.031)),b=static_cast<float>(.72*std::cos(n*.017));
+                float c=a,d=b;
+                if(channels==2){old.processSampleStereo(a,b);now.processSampleStereo(c,d);}
+                else {old.processSampleMono(a);now.processSampleMono(c);}
+                exact &= std::memcmp(&a,&c,4)==0 && std::memcmp(&b,&d,4)==0;
+            }
+            check(exact,"CPU changes preserve samples during Mike, Drive, Tone and noise transitions");
+        }
+        return failures?1:0;
+    }
     if(argc>2 && std::string(argv[2])=="--bench") { benchmark(out); return 0; }
     if (argc > 2 && std::string(argv[2]) == "--null")
     {
