@@ -848,7 +848,13 @@ namespace jj8nls
                 inverse.b0=1.0/pre.b0; inverse.b1=pre.a1/pre.b0; inverse.b2=pre.a2/pre.b0;
                 inverse.a1=pre.b1/pre.b0; inverse.a2=pre.b2/pre.b0;
                 deEmphasis[ch].setTarget (inverse);
-                outputAir[ch].setTarget (BiquadSection::makeHighShelf (jaycen ? (t < 0.0 ? 8000.0 : 16000.0) : (t < 0.0 ? 6000.0 : 8000.0), 0.70710678, airDb, sampleRate));
+                if (jaycen && t < 0.0)
+                {
+                    // Reduce the console crest near 13 kHz mostly in the last half of Tight.
+                    const double cut = (ch == 0 ? -1.45 : -1.95) * opening * opening;
+                    outputAir[ch].setTarget (BiquadSection::makePeaking (13500.0, 1.45, cut, sampleRate));
+                }
+                else outputAir[ch].setTarget (BiquadSection::makeHighShelf (jaycen ? (t < 0.0 ? 8000.0 : 16000.0) : (t < 0.0 ? 6000.0 : 8000.0), 0.70710678, airDb, sampleRate));
             }
         }
 
