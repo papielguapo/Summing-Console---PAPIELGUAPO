@@ -61,8 +61,8 @@ public:
         const double v = getValue();
         if (driveKnob)
             return "Drive " + juce::String ((v + 10.0) * 5.0, 0) + "% | "
-                 + (v <= 0 ? "Mike 1: " + juce::String (0.05 * (v + 10.0), 2) + " dB" : "Bus Smash: Mike + Spike");
-        return v < 0 ? "Tight Sub / Dark" : v > 0 ? "Full Phat & Air" : "Jaycen: referencia";
+                 + (v < 0 ? "Clean" : v == 0 ? "JJ" : v <= 5 ? "Drive" : "Bus Smash");
+        return v < 0 ? "Tight Sub" : v > 0 ? "Full Phat & Air" : "Jaycen: referencia";
     }
 
 private:

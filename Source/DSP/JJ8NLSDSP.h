@@ -417,15 +417,16 @@ namespace jj8nls
                 if (jaycenDriveApplied && lastJaycenDrive == lastRawDrive) return;
                 lastJaycenDrive = lastRawDrive;
                 jaycenDriveApplied = true;
-                const double push = std::max (0.0, lastRawDrive / 10.0);
-                setSlotDrive (0, lastRawDrive <= 0.0 ? 0.05 * (lastRawDrive + 10.0) : 0.5 + 1.5 * push);
+                const double travel = std::max (0.0, lastRawDrive / 10.0);
+                const double push = travel * travel;
+                setSlotDrive (0, 0.5 + 1.5 * push);
                 for (int i = 1; i <= 6; ++i)
                 {
                     const double onset = 0.10 * (i - 1);
                     const double fraction = std::max (0.0, (push - onset) / (1.0 - onset));
                     setSlotDrive (i, (i < 5 ? 9.0 : 6.0) * fraction);
                 }
-                globalHarmonicScale = 1.0;
+                globalHarmonicScale = std::clamp (1.0 + lastRawDrive / 10.0, 0.0, 1.0);
             }
             else globalHarmonicScale = currentConsoleVariant == 4 ? 0.50 + 0.050 * std::abs (lastRawDrive)
                                                           : std::clamp (1.0 + lastRawDrive / 10.0, 0.0, 1.0);
@@ -803,7 +804,7 @@ namespace jj8nls
                 // Smooth limiting past the measured +/-1 input range.
                 const double excess = std::max (0.0, std::abs (driven) - 1.0);
                 const double tail = std::copysign (excess * excess / (1.0 + excess), driven);
-                return s + (delta - tail) / driveGain;
+                return s + mix * ((delta - tail) / driveGain);
             }
             if (mix == 0.0) return s;
             const double excitation = currentConsoleVariant == 0 ? 0.0 : currentConsoleVariant == 4 ? std::abs (lastRawDrive)
@@ -828,7 +829,7 @@ namespace jj8nls
             const double weight = std::max (0.0, t);
             // Audible balance is independent of the reciprocal saturation-emphasis pair.
             const bool jaycen = currentConsoleVariant == 0;
-            const double airDb = jaycen ? 3.0 * weight - 1.5 * opening : (1.25 * opening - 1.75 * weight) * (0.65 + 0.35 * std::abs (t));
+            const double airDb = jaycen ? 3.0 * weight : (1.25 * opening - 1.75 * weight) * (0.65 + 0.35 * std::abs (t));
             for (int ch=0; ch<2; ++ch)
             {
                 const double slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));

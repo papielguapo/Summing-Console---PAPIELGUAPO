@@ -299,9 +299,9 @@ int main(int argc,char** argv)
             capture<jj8nls::JJ8NLSChainDSP>(out/("sine"+name+".f32"),3,0,0,0,"sine",0.17803894,1000,false,stages);
         }
         capture<jj8nls::JJ8NLSChainDSP>(out/"default-linked.f32",3,0,0,0,"sine",0.17803894,1000,true);
-        for (int tone : {-10,0,10})
+        for (int tone : {-10,-7,-5,-2,0,10})
             capture<jj8nls::JJ8NLSChainDSP>(out/("tone"+std::to_string(tone)+".f32"),3,0,tone,0,"impulse",1.e-4,0);
-        for (int drive : {-10,0,5,10})
+        for (int drive : {-10,-5,0,5,10})
             for (int ag : {0,1})
                 capture<jj8nls::JJ8NLSChainDSP>(out/("drive"+std::to_string(drive)+"ag"+std::to_string(ag)+".f32"),3,0,0,drive,"sine",0.70794578,1000,ag!=0);
         return failures ? 1 : 0;
