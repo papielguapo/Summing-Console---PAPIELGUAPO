@@ -1,4 +1,4 @@
-# Summing Console — PAPIELGUAPO 2.4.3
+# Summing Console — PAPIELGUAPO 2.4.4
 
 Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike (+0.5 dB Drive) → Mike → Mike → Mike → Mike → Spike → Spike → Nevo (−2 dB Trim)**. Jaycen counts 4–8 retain Mike #1 and slots 6–8, successively bypassing Mike #5 through #2 as the count falls. Counts 1–3 audition the first stages. New instances start with eight stages. Click NLSC to bypass Mike 2, then 3, then 4, then 5. The next click restores all eight. Disable AutoGain to hear the absolute output trim. Jaycen is the sole processor bank. Sessions saved with earlier banks reopen on Jaycen.
 
@@ -9,7 +9,7 @@ The independent Jaycen model uses per-slot, per-channel filter fits and nonlinea
 ## DSP architecture
 
 ```
-Input → selected-rate domain (native 0x, 4x or 8x IIR)
+Input → selected-rate domain (native 1x, 4x or 8x IIR)
       → 21 Hz first-order subsonic HP
       → Tone pre-emphasis
       → [minimum-phase impedance filters → biased saturation] × 8
@@ -18,7 +18,7 @@ Input → selected-rate domain (native 0x, 4x or 8x IIR)
       → downsampler when enabled → latency-aligned bypass crossfade → Output
 ```
 
-* **Single cascade domain:** all eight stages run together at the selected rate. Right-click selects **0x / zero latency** (native 1x, no oversampling), **4x** (lower CPU) or **8x** (default). Native mode adds zero samples of processing delay but produces more aliasing when driven. Legacy 2x settings migrate to 4x. The 4x and 8x paths each use one upsampler before stage 1 and one downsampler after stage 8; native mode performs no sample-rate conversion. Latency is integer compensated and reported in `prepareToPlay`, never changed from the audio callback. Finite oversampling reduces aliasing; it cannot mathematically eliminate every alias component.
+* **Single cascade domain:** all eight stages run together at the selected rate. Right-click selects **1x / zero latency** (native 1x, no oversampling), **4x** (lower CPU) or **8x** (default). Native mode adds zero samples of processing delay but produces more aliasing when driven. Legacy 2x settings migrate to 4x. The 4x and 8x paths each use one upsampler before stage 1 and one downsampler after stage 8; native mode performs no sample-rate conversion. Latency is integer compensated and reported in `prepareToPlay`, never changed from the audio callback. Finite oversampling reduces aliasing; it cannot mathematically eliminate every alias component.
 * **Stage interaction:** five minimum-phase biquads precede each nonlinear transfer: high-mid impedance, a controlled 27 Hz resonance, 52.8 Hz punch, a 92 Hz dip, and model-dependent top roll-off. Filter histories survive parameter changes.
 * **Sub headroom:** one fixed 6 dB/oct high-pass at 21 Hz prevents infrabass buildup. Tone does not move its cutoff. The output DC blocker remains fixed at 5 Hz.
 * **Dual mono:** every stage/channel has deterministic frequency deviations of ±1.0–1.5% and a unique bias. Independent L/R audio states remain uncoupled. AutoGain applies a common gain to both channels and does not force their levels to match.
@@ -31,7 +31,7 @@ Input → selected-rate domain (native 0x, 4x or 8x IIR)
 
 Drive, Tone, AutoGain, bypass, noise, stage enable and model character are smoothed. Tone filter designs run at a bounded control rate; biquad coefficient interpolation retains delay states and uses stable denominator interpolation. Settled filters skip coefficient interpolation, and fixed bias terms are cached.
 
-Oversampling storage and the dry delay ring are allocated in preparation. Oversized host buffers are processed in bounded chunks without resizing or allocating in `processBlock`. Live oversampling changes fade to latency-aligned dry audio for 20 ms, reset the preallocated destination domain, warm it for 40 ms, and fade wet back over 20 ms. Only one quality domain is processed at a time. Host latency stays fixed between 4x and 8x using preallocated wet padding. Native 0x uses no padding and reports zero samples. Switching to/from native changes host PDC: an atomic request is serviced by a message-thread timer; no latency notification or message allocation occurs in the audio callback. Dry-delay interpolation softens the timing transition. The host can also retime other tracks when PDC changes, so quality changes are best made while stopped when exact inter-track alignment matters. Both the plugin switch and host bypass use the same 20 ms latency-aware dry/wet transition; wet DSP continues running while bypassed to preserve state. A settled bypass returns the exact dry signal delayed by the reported latency.
+Oversampling storage and the dry delay ring are allocated in preparation. Oversized host buffers are processed in bounded chunks without resizing or allocating in `processBlock`. Live oversampling changes fade to latency-aligned dry audio for 20 ms, reset the preallocated destination domain, warm it for 40 ms, and fade wet back over 20 ms. Only one quality domain is processed at a time. Host latency stays fixed between 4x and 8x using preallocated wet padding. Native 1x uses no padding and reports zero samples. Switching to/from native changes host PDC: an atomic request is serviced by a message-thread timer; no latency notification or message allocation occurs in the audio callback. Dry-delay interpolation softens the timing transition. The host can also retime other tracks when PDC changes, so quality changes are best made while stopped when exact inter-track alignment matters. Both the plugin switch and host bypass use the same 20 ms latency-aware dry/wet transition; wet DSP continues running while bypassed to preserve state. A settled bypass returns the exact dry signal delayed by the reported latency.
 
 The parameter IDs (`drive`, `sub_punch`, `autogain`, `bypass`), plugin ID and saved skin/editor properties remain compatible. Old sessions will sound different because the DSP transfer and bass response intentionally changed. The six interface skins remain available.
 
@@ -48,7 +48,7 @@ Run `JJ8NLSMeasurements.exe captures --drive-only`, then `python Tests/analyse_d
 
 The v2.1 full-processor benchmark at the preserved +1 Drive reference, on the i7-9750H, stereo at 256 samples with noise and AutoGain on:
 
-| Host rate | 0x native | 4x | 8x |
+| Host rate | 1x native | 4x | 8x |
 | --- | --- | --- | --- |
 | 48 kHz | 3.8% | 15.2% | 25.0% |
 | 96 kHz | 7.5% | 25.6% | 49.5% |
@@ -118,3 +118,5 @@ The model and console names describe reference-inspired signal character. They d
 Version 2.3.1 balances the Jaycen stereo output with fixed, opposite gain trims derived from each active insert at 1 kHz. The calibration follows the Mike switches with a 30 ms transition. The context menu contains Oversampling, Skins, Noise and Active Mike inserts.
 
 At full Tight, the 4–20 kHz maximum is calibrated to the 20–200 Hz maximum per channel with all eight stages at 48 kHz, 8x and Drive 0.
+
+The native path uses host buffers directly and rate-specific filter prototypes. Earlier native sessions load as 1x with zero reported latency.

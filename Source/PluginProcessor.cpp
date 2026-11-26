@@ -47,8 +47,8 @@ JJ8NLSAudioProcessor::JJ8NLSAudioProcessor()
 
     for (size_t i=0; i<oversamplers.size(); ++i)
     {
-        oversamplers[i] = std::make_unique<juce::dsp::Oversampling<float>> (
-            2, i==0 ? 0 : i+1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, true);
+        if (i != 0) oversamplers[i] = std::make_unique<juce::dsp::Oversampling<float>> (
+            2, i+1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR, true, true);
         auto& engine = dspEngines[i];
         engine.applyDefaultJaycenJoshuaChain();
         engine.setStereoBalanceMode (jj8nls::StereoBalanceMode::SubAndMidLocked);
@@ -95,14 +95,16 @@ void JJ8NLSAudioProcessor::applyOversamplingConfiguration (int osMode)
     for (size_t i=0; i<oversamplers.size(); ++i)
     {
         const double rate = baseSampleRate * static_cast<double> (1 << (i==0 ? 0 : static_cast<int> (i)+1));
-        dspEngines[i].prepare (rate);
+        dspEngines[i].setMasterNoiseEnabled (getAnalogNoiseEnabled());
+        dspEngines[i].setAutoGainEnabled (isLinkedMode());
+        dspEngines[i].prepare (rate, i == 0);
         driveSmoothed[i].reset (rate, 0.030);
         toneSmoothed[i].reset (rate, 0.030);
         driveSmoothed[i].setCurrentAndTargetValue (driveParam->load());
         toneSmoothed[i].setCurrentAndTargetValue (subPunchParam->load());
         dspEngines[i].setBipolarDrive (driveSmoothed[i].getCurrentValue());
         dspEngines[i].setBipolarTone (toneSmoothed[i].getCurrentValue());
-        qualityLatencies[i] = static_cast<int> (std::lround (oversamplers[i]->getLatencyInSamples()));
+        qualityLatencies[i] = i == 0 ? 0 : static_cast<int> (std::lround (oversamplers[i]->getLatencyInSamples()));
         latency = std::max (latency, qualityLatencies[i]);
     }
     maxQualityLatency = latency;
@@ -168,6 +170,7 @@ void JJ8NLSAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 
     for (auto& os : oversamplers)
     {
+        if (!os) continue;
         os->initProcessing (static_cast<size_t> (maxBlockSize));
         os->reset();
     }
@@ -192,7 +195,7 @@ void JJ8NLSAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock
 void JJ8NLSAudioProcessor::releaseResources()
 {
     for (auto& engine : dspEngines) engine.reset();
-    for (auto& os : oversamplers) os->reset();
+    for (auto& os : oversamplers) if (os) os->reset();
     dryDelay.clear();
     wetDelay.clear();
 }
@@ -234,7 +237,7 @@ void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
             targetHostLatency.store (renderLatency, std::memory_order_release);
             pendingHostLatency.store (renderLatency, std::memory_order_release);
             const auto next = static_cast<size_t> (activeOSMode == 0 ? 0 : activeOSMode-1);
-            oversamplers[next]->reset();
+            if (oversamplers[next]) oversamplers[next]->reset();
             dspEngines[next].reset();
             driveSmoothed[next].setCurrentAndTargetValue (driveParam->load (std::memory_order_relaxed));
             toneSmoothed[next].setCurrentAndTargetValue (subPunchParam->load (std::memory_order_relaxed));
@@ -246,7 +249,7 @@ void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
             runningOSMode.store (activeOSMode, std::memory_order_relaxed);
         }
         const auto quality = static_cast<size_t> (activeOSMode == 0 ? 0 : activeOSMode-1);
-        auto& os = *oversamplers[quality];
+        auto* os = oversamplers[quality].get();
         auto& engine = dspEngines[quality];
         auto& drive = driveSmoothed[quality];
         auto& toneValue = toneSmoothed[quality];
@@ -263,7 +266,7 @@ void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
         juce::dsp::AudioBlock<float> whole (buffer);
         auto base = whole.getSubsetChannelBlock (0, static_cast<size_t> (channels))
                          .getSubBlock (static_cast<size_t> (offset), static_cast<size_t> (count));
-        auto high = os.processSamplesUp (base);
+        auto high = os ? os->processSamplesUp (base) : base;
         auto* left = high.getChannelPointer (0);
         auto* right = channels == 2 ? high.getChannelPointer (1) : nullptr;
         for (size_t n=0; n<high.getNumSamples(); ++n)
@@ -281,7 +284,7 @@ void JJ8NLSAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce:
             if (right != nullptr) engine.processSampleStereo (left[n], right[n]);
             else engine.processSampleMono (left[n]);
         }
-        os.processSamplesDown (base);
+        if (os) os->processSamplesDown (base);
         for (int n=0; n<count; ++n) for (int ch=0; ch<channels; ++ch)
             wetDelay.setSample (ch, (startPosition+n) % ringSize, buffer.getSample (ch, offset+n));
         for (int n=0; n<count; ++n)

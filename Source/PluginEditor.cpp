@@ -71,7 +71,7 @@ const char* FLHeatAudioProcessorEditor::getOversamplingShortTag (int osMode) noe
 {
     switch (juce::jlimit (0, 3, osMode))
     {
-        case 0:  return "0x";
+        case 0:  return "1x";
         case 1:  return "2x";
         case 2:  return "4x";
         default: return "8x";
@@ -88,7 +88,7 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     const char* names[] = { "FL Studio", "Pro Tools", "Atari ST", "Ableton Live", "Logic Pro", "Cubase" };
     for (int i = 0; i < 6; ++i)
         skins.addItem (i+1, names[i], true, curSkin == i);
-    quality.addItem (10, "0x / Zero latency", true, curOS == 0);
+    quality.addItem (10, "1x / Native / Zero latency", true, curOS == 0);
     quality.addItem (12, "4x", true, curOS == 2);
     quality.addItem (13, "8x", true, curOS == 3);
     const bool enabled = audioProcessor.getAnalogNoiseEnabled();

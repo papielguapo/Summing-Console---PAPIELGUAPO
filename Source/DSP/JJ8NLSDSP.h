@@ -2,6 +2,7 @@
 
 #include <array>
 #include "JaycenCalibration.h"
+#include "NativeCalibration.h"
 #include <cmath>
 #include <cstdint>
 #include <algorithm>
@@ -276,8 +277,17 @@ namespace jj8nls
 
         int getConsoleVariant() const noexcept { return currentConsoleVariant; }
 
-        void prepare (double newSampleRate) noexcept
+        void prepare (double newSampleRate, bool native = false) noexcept
         {
+            calibration = jaycenSections;
+            if (native)
+            {
+                size_t nearest = 0;
+                for (size_t i = 1; i < std::size(nativeRates); ++i)
+                    if (std::abs(nativeRates[i]-newSampleRate) < std::abs(nativeRates[nearest]-newSampleRate))
+                        nearest = i;
+                calibration = nativeSections[nearest];
+            }
             sampleRate = std::max (8000.0, newSampleRate);
             autoGainRmsCoeff = 1.0 - std::exp (-1.0 / (0.120 * sampleRate)); // 120ms stereo-linked AutoGain RMS
             autoGainSmoothCoeff = 1.0 - std::exp (-1.0 / (0.045 * sampleRate)); // 45ms smooth AutoGain gain slewing
@@ -896,7 +906,7 @@ namespace jj8nls
                     const double rate = 2.0 * sampleRate;
                     for (int n = 0; n < 5; ++n)
                     {
-                        const auto& section = jaycenSections[index][ch][n];
+                        const auto& section = calibration[index][ch][n];
                         const double r2 = rate * rate;
                         const double den = r2 + section[2]*rate + section[3];
                         BiquadSection filter;
@@ -933,6 +943,7 @@ namespace jj8nls
         juce::SmoothedValue<double> autoGainMix, noiseMix, harmonicMix, biasMix;
         double currentHarmonicMix = 1.0, currentBiasMix = 1.0;
         double currentNoiseMix = 0.0;
+        const double (*calibration)[2][5][5] = jaycenSections;
         double sampleRate = 48000.0;
         double autoGainRmsCoeff = 0.00017;
         double autoGainSmoothCoeff = 0.00046;

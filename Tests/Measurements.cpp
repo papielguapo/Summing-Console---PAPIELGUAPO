@@ -281,6 +281,29 @@ int main(int argc,char** argv)
         }
         return failures?1:0;
     }
+    if(argc>2 && std::string(argv[2])=="--linear244")
+    {
+        for (int rate : {44100,48000,96000}) for(int mode : {0,3})
+        {
+            JJ8NLSAudioProcessor p; p.setOversamplingMode(mode); p.setAnalogNoiseEnabled(false);
+            p.prepareToPlay(rate,256);
+            juce::MidiBuffer midi; juce::AudioBuffer<float> buffer(2,256);
+            std::ofstream file(out/(std::to_string(rate)+"-"+std::to_string(mode)+".f32"), std::ios::binary);
+            for (int warm=0; warm<512; ++warm) { buffer.clear(); p.processBlock(buffer,midi); }
+            for(int block=0;block<512;++block)
+            {
+                buffer.clear();
+                if(block==0) for(int ch=0;ch<2;++ch) buffer.setSample(ch,0,0.0001f);
+                p.processBlock(buffer,midi);
+                if(block==0 && mode==0) check(p.getLatencySamples()==0 && std::abs(buffer.getSample(0,0))>1e-12f,"native wet impulse begins at sample zero");
+                for(int i=0;i<256;++i) for(int ch=0;ch<2;++ch)
+                {
+                    float y=buffer.getSample(ch,i);file.write(reinterpret_cast<char*>(&y),sizeof(y));
+                }
+            }
+        }
+        return failures?1:0;
+    }
     if(argc>2 && std::string(argv[2])=="--bench") { benchmark(out); return 0; }
     if (argc > 2 && std::string(argv[2]) == "--null")
     {
