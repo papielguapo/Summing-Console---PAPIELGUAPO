@@ -1,0 +1,7 @@
+sample_rate,block_size,oversampling,setting,median_us,p95_us,max_us,median_deadline_percent,p95_deadline_percent
+48000,256,0,Jaycen_default,201.7,221.8,328.5,3.78188,4.15875
+96000,256,0,Jaycen_default,199.2,218,276.5,7.47,8.175
+48000,256,4,Jaycen_default,810.8,981.3,1624.3,15.2025,18.3994
+96000,256,4,Jaycen_default,682.5,819.3,1129.7,25.5938,30.7238
+48000,256,8,Jaycen_default,1334.1,1829.7,2868.9,25.0144,34.3069
+96000,256,8,Jaycen_default,1321.1,1655,2492.7,49.5413,62.0625

@@ -1,0 +1,72 @@
+SUMMING CONSOLE 2.1.0 / TONE + 0x/4x/8x
+Fecha: 2026-11-26
+Intel Core i7-9750H / Windows x64 / MSVC Release / JUCE 8.0.4
+
+CAMBIOS
+Tone izquierda: elimina progresivamente el dip de 92 Hz, controla la resonancia de 27 Hz, reduce el punch de 52.8 Hz un 35%, relaja la caida de agudos de las etapas y abre un shelf suave de 8 kHz hasta +1.25 dB.
+Tone derecha: resonancia 27 Hz hasta 1.35x, punch hasta 1.20x, dip sin profundizar, shelf suave de 8 kHz hasta -1.75 dB.
+Centro: respuesta conservada exactamente frente al motor 2.0 en las cinco variantes.
+HP fijo 21 Hz; DC fijo 5 Hz. Pre/de-enfasis de saturacion separado del balance tonal.
+
+CALIDAD EN CLICK DERECHO
+0x: nativo 1x, sin conversion de frecuencia ni padding. Latencia anunciada al host = 0 muestras; impulso wet comprobado desde la muestra 0.
+4x y 8x: toda la cascada dentro de un solo dominio sobremuestreado; 8x predeterminado. Ambos mantienen la misma PDC mediante padding preasignado.
+Tres dominios preasignados; solo uno procesa audio. Cambio por dry compensado: fade-out 20 ms, calentamiento 40 ms, fade-in 20 ms.
+Al pasar de/a 0x cambia la PDC. La notificacion al host se realiza con Timer en el hilo de mensajes, fuera del callback. El host tambien puede realinear otras pistas; para alineacion critica conviene cambiar de calidad con el transporte parado.
+La latencia cero significa que no se anade retardo de buffering, no que los filtros causales carezcan de fase/group delay.
+
+RESPUESTA MEDIDA / 48 kHz / 8x / ruido y AutoGain OFF / impulso -80 dBFS
+Variante | Tone | 27 Hz | 53 Hz | 92 Hz | 16 kHz (dB)
+Jaycen 8x | -10 | -2.050 | +0.746 | -0.012 | +1.158
+Jaycen 8x | 0 | +0.007 | +1.276 | -1.759 | -1.322
+Jaycen 8x | 10 | +0.779 | +1.816 | -1.665 | -2.970
+SSL Spike 8x | -10 | -2.157 | -0.257 | -0.168 | +1.197
+SSL Spike 8x | 0 | -1.600 | -0.173 | -0.912 | -0.626
+SSL Spike 8x | 10 | -1.385 | -0.017 | -0.885 | -2.274
+Neve Nevo 8x | -10 | -2.073 | +0.519 | -0.049 | +1.145
+Neve Nevo 8x | 0 | -0.068 | +0.920 | -1.797 | -1.988
+Neve Nevo 8x | 10 | +0.684 | +1.387 | -1.715 | -3.635
+EMI Mike 8x | -10 | -2.002 | +1.193 | +0.055 | +1.144
+EMI Mike 8x | 0 | +0.666 | +1.915 | -2.096 | -1.475
+EMI Mike 8x | 10 | +1.667 | +2.623 | -1.973 | -3.121
+HEAT Hybrid 8x | -10 | -2.114 | +0.130 | -0.111 | +1.171
+HEAT Hybrid 8x | 0 | -1.354 | +0.290 | -1.377 | -1.316
+HEAT Hybrid 8x | 10 | -1.053 | +0.575 | -1.331 | -2.965
+
+CPU MEDIDA / 256 muestras / estereo / ruido y AutoGain ON / sin GUI, driver ni DAW
+Porcentaje del plazo de UN nucleo, no CPU total del sistema. Mediana de 300 bloques, tras 1 segundo de calentamiento de audio.
+Hz | calidad | mediana % | P95 %
+48000 | 0x | 3.78 | 4.16
+96000 | 0x | 7.47 | 8.18
+48000 | 4x | 15.20 | 18.40
+96000 | 4x | 25.59 | 30.72
+48000 | 8x | 25.01 | 34.31
+96000 | 8x | 49.54 | 62.06
+
+ALIASING / seno 11 kHz / -3 dBFS pico / Drive +10 / ruido y AutoGain OFF
+Energia en bins de armonicos plegados, excluyendo la fundamental y H2 legitimo. Prueba puntual; que un factor de mas atenuacion en este punto no demuestra superioridad global.
+1x_tone_-10: -29.19 dBc
+1x_tone_10: -37.37 dBc
+4x_tone_-10: -120.23 dBc
+4x_tone_10: -126.08 dBc
+8x_tone_-10: -111.53 dBc
+8x_tone_10: -121.40 dBc
+
+VALIDACION
+620 comprobaciones C++ correctas; 66 criterios numericos correctos; cero fallos.
+Mono/estereo y 0x/4x/8x a 44.1/48/96/192 kHz; automatizacion y bloques mayores que el hint.
+Cambios en vivo 8x->0x->4x->8x->0x: dominio activo, PDC, continuidad de seno 1 kHz, persistencia del modo y ausencia de asignaciones C++ comprobados.
+Native wet: respuesta al impulso desde la muestra 0. Bypass: impulso dry exacto alineado con la PDC.
+0 llamadas operator new/new[] detectadas dentro de processBlock, incluidos cambios de calidad. La instrumentacion no intercepta todos los malloc/HeapAlloc del sistema.
+AutoGain comprobado con seno de 1 kHz a -18 dBFS RMS; no garantiza igualdad instantanea o LUFS de cualquier programa.
+
+LIMITES
+0x genera mas aliasing bajo saturacion: es la opcion de ahorro, no la maxima calidad.
+El bypass suave mantiene el DSP activo y no reduce consumo.
+El rendimiento depende de la carga y condiciones termicas del equipo. No garantiza un numero concreto de instancias en un DAW.
+La equivalencia comercial 1:1 con NLS/HEAT no esta verificada.
+
+REPRODUCCION
+JJ8NLSMeasurements.exe <capturas> --tone-only
+JJ8NLSMeasurements.exe <resultados> --bench
+python Tests/analyse_tone.py <capturas> <resultados>

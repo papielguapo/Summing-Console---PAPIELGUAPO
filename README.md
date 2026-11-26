@@ -1,4 +1,4 @@
-# Summing Console — PAPIELGUAPO 2.0
+# Summing Console — PAPIELGUAPO 2.1
 
 Windows x64 VST3 and Standalone console processor built with C++17 and JUCE 8.0.4. Eight serial stages use the Jaycen-inspired order **Mike → Spike → Mike → Mike → Mike → Spike → Nevo → Mike**. Alternative banks provide all-Spike, all-Nevo, all-Mike and alternating Spike/Nevo HEAT Hybrid character.
 
@@ -7,32 +7,50 @@ Version 2 replaces the envelope-normalized Chebyshev exciter with a fixed-refere
 ## DSP architecture
 
 ```
-Input → one 8x IIR upsampler
-      → 21–22 Hz first-order subsonic HP
+Input → selected-rate domain (native 0x, 4x or 8x IIR)
+      → 21 Hz first-order subsonic HP
       → Tone pre-emphasis
       → [minimum-phase impedance filters → biased saturation] × 8
       → reciprocal de-emphasis → controlled air shelf
       → 5 Hz first-order DC blocker → stereo-linked RMS AutoGain
-      → one downsampler → latency-aligned bypass crossfade → Output
+      → downsampler when enabled → latency-aligned bypass crossfade → Output
 ```
 
-* **Single oversampled domain:** all eight stages run at 8 × the host sample rate. Quality is fixed at 8x; legacy 1x/2x/4x state settings migrate to 8x. Latency is integer compensated and reported in `prepareToPlay`, never changed from the audio callback. Finite oversampling reduces aliasing; it cannot mathematically eliminate every alias component.
+* **Single cascade domain:** all eight stages run together at the selected rate. Right-click selects **0x / zero latency** (native 1x, no oversampling), **4x** (lower CPU) or **8x** (default). Native mode adds zero samples of processing delay but produces more aliasing when driven. Legacy 2x settings migrate to 4x. The 4x and 8x paths each use one upsampler before stage 1 and one downsampler after stage 8; native mode performs no sample-rate conversion. Latency is integer compensated and reported in `prepareToPlay`, never changed from the audio callback. Finite oversampling reduces aliasing; it cannot mathematically eliminate every alias component.
 * **Stage interaction:** five minimum-phase biquads precede each nonlinear transfer: high-mid impedance, a controlled 27 Hz resonance, 52.8 Hz punch, a 92 Hz dip, and model-dependent top roll-off. Filter histories survive parameter changes.
-* **Sub headroom:** one 6 dB/oct high-pass at 21 Hz (22 Hz at Tone −10) prevents the old stacked infrabass boost. Tight Sub removes the controlled 27 Hz resonance while retaining the 40–60 Hz punch and 92 Hz dip. A separate 5 Hz DC blocker follows stage 8.
+* **Sub headroom:** one fixed 6 dB/oct high-pass at 21 Hz prevents infrabass buildup. Tone does not move its cutoff. The output DC blocker remains fixed at 5 Hz.
 * **Dual mono:** every stage/channel has deterministic frequency deviations of ±1.0–1.5% and a unique bias. Independent L/R audio states remain uncoupled. AutoGain applies a common gain to both channels and does not force their levels to match.
 * **Level calibration:** −18 dBFS RMS is the nominal 0 VU reference. Saturation has unity small-signal slope and a fixed knee; distortion increases with level instead of being normalized to a constant THD. Hot-level measurements distinguish peak from RMS units.
-* **Tone:** positive Tone raises a 4.5 kHz shelf ahead of saturation (up to +4 dB), applies its exact reciprocal after the cascade, then adds a proportional 12 kHz air shelf (up to +1.5 dB). The reciprocal pair is exact at settled coefficients, before nonlinear processing. Negative Tone tightens the sub. HEAT negative Drive reduces even bias to emphasize odd harmonics.
+* **Tone (v2.1):** the center retains the v2.0 voicing. Turning left progressively removes the 27 Hz resonance and 92 Hz dip, reduces the 52.8 Hz punch by up to 35%, relaxes the stage top roll-off and adds up to +1.25 dB of 8 kHz air. Turning right adds controlled weight (27 Hz resonance scale up to 1.35, punch scale up to 1.20) and a gentle 8 kHz shelf down to −1.75 dB, without deepening the dip. A separate 4.5 kHz pre-emphasis shelf (−2 × normalized Tone dB) and its exact reciprocal after the cascade shape saturation excitation independently of the audible air shelf. HEAT negative Drive continues to favor odd harmonics. The Tone change adds no extra audio filter stages. The three quality domains have their own preallocated storage, with only the selected domain processing audio.
 * **AutoGain:** a stereo-linked 120 ms RMS detector with 45 ms gain slewing matches steady signal energy, bounded to ±12 dB. This is RMS compensation, not a promise of instantaneous or LUFS-identical perceived loudness for arbitrary material.
 
 ## Real-time behavior
 
 Drive, Tone, AutoGain, bypass, noise, stage enable and model character are smoothed. Tone filter designs run at a bounded control rate; biquad coefficient interpolation retains delay states and uses stable denominator interpolation. Settled filters skip coefficient interpolation, and fixed bias terms are cached.
 
-Oversampling storage and the dry delay ring are allocated in preparation. Oversized host buffers are processed in bounded chunks without resizing or allocating in `processBlock`. Both the plugin switch and host bypass use the same 20 ms latency-aware dry/wet transition; wet DSP continues running while bypassed to preserve state. A settled bypass returns the exact dry signal delayed by the reported latency.
+Oversampling storage and the dry delay ring are allocated in preparation. Oversized host buffers are processed in bounded chunks without resizing or allocating in `processBlock`. Live oversampling changes fade to latency-aligned dry audio for 20 ms, reset the preallocated destination domain, warm it for 40 ms, and fade wet back over 20 ms. Only one quality domain is processed at a time. Host latency stays fixed between 4x and 8x using preallocated wet padding. Native 0x uses no padding and reports zero samples. Switching to/from native changes host PDC: an atomic request is serviced by a message-thread timer; no latency notification or message allocation occurs in the audio callback. Dry-delay interpolation softens the timing transition. The host can also retime other tracks when PDC changes, so quality changes are best made while stopped when exact inter-track alignment matters. Both the plugin switch and host bypass use the same 20 ms latency-aware dry/wet transition; wet DSP continues running while bypassed to preserve state. A settled bypass returns the exact dry signal delayed by the reported latency.
 
 The parameter IDs (`drive`, `sub_punch`, `autogain`, `bypass`), plugin ID and saved skin/editor properties remain compatible. Old sessions will sound different because the DSP transfer and bass response intentionally changed. The six interface skins remain available.
 
-## Measurements
+## Tone 2.1 — measured endpoints
+
+![Tone 2.1 response](Measurements/tone_v2.1/tone_2.1_respuesta.png)
+![CPU 2.1](Measurements/tone_v2.1/tone_2.1_cpu.png)
+
+Current full-processor benchmark on the i7-9750H, stereo at 256 samples with noise and AutoGain on:
+
+| Host rate | 0x native | 4x | 8x |
+| --- | --- | --- | --- |
+| 48 kHz | 3.8% | 15.2% | 25.0% |
+| 96 kHz | 7.5% | 25.6% | 49.5% |
+
+Values are median single-core audio deadline use, excluding GUI/DAW/driver overhead. Native mode saves about 85% of DSP time versus 8x in this test, with increased aliasing. The smooth bypass keeps DSP active. Zero latency refers to added processor buffering, not the phase/group delay of its causal analog-style filters.
+
+Run `JJ8NLSMeasurements.exe captures --tone-only`, then `python Tests/analyse_tone.py captures Measurements/tone_v2.1` to verify five variants at Tone −10/−5/0/+5/+10, center identity against the captured v2.0 DSP, steady-state AutoGain and endpoint aliasing. The archived v2.0 engine used by these checks is `Tests/ToneBaselineDSP.h`.
+
+## Archived v2.0 measurements
+
+The following plots and CPU measurements document v2.0. Its Tone-center response is preserved by v2.1; the old endpoint curves describe the previous Tone behavior.
 
 ![Frequency response and harmonics](Measurements/01_respuesta_y_armonicos.png)
 ![DSP validation](Measurements/02_validacion_dsp.png)
@@ -73,6 +91,9 @@ The project reuses the existing local JUCE checkout when available and otherwise
 # Run only processor regressions or CPU benchmarks:
 .\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures --regressions-only
 .\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures --bench
+# Tone 2.1 and quality checks, plus the current plots:
+.\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures --tone-only
+python Tests/analyse_tone.py captures Measurements/tone_v2.1
 # Full runner (default) includes the regressions and audio captures:
 .\build\JJ8NLSMeasurements_artefacts\Release\JJ8NLSMeasurements.exe .\captures
 python -m pip install numpy matplotlib

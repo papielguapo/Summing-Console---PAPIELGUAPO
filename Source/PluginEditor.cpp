@@ -71,7 +71,7 @@ const char* FLHeatAudioProcessorEditor::getOversamplingShortTag (int osMode) noe
 {
     switch (juce::jlimit (0, 3, osMode))
     {
-        case 0:  return "1x";
+        case 0:  return "0x";
         case 1:  return "2x";
         case 2:  return "4x";
         default: return "8x";
@@ -117,11 +117,13 @@ void FLHeatAudioProcessorEditor::showContextMenu()
     menu.addItem (44, "5. FL HEAT Hybrid 8x (4x SSL + 4x Neve: +Drive Triode Pares / -Drive Console Impares)", true, curVar == 4);
 
     menu.addSeparator();
-    menu.addSectionHeader ("OVERSAMPLING (CHEBYSHEV H2..H16 ANTI-ALIASING)");
+    menu.addSectionHeader ("OVERSAMPLING (Toda la cascada)");
 
 
 
-    menu.addItem (13, "8x (Fixed cascade domain)",          true, curOS == 3);
+    menu.addItem (10, "0x (Nativo / Latencia cero / Menor CPU)", true, curOS == 0);
+    menu.addItem (12, "4x (Menor CPU)", true, curOS == 2);
+    menu.addItem (13, "8x (Calidad alta / Predeterminado)", true, curOS == 3);
 
     menu.addSeparator();
     menu.addSectionHeader ("ANALOG CONSOLE NOISE FLOOR (1/f PINK + 50 Hz HUM)");
@@ -259,14 +261,14 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
                                          event.position.y / std::max (0.1f, logicalScale));
 
     // Left-clicking the top header bar (outside the LNK/AutoGain button) cycles Stages (8x -> 4x -> 2x -> 1x)
-    // Shift+Click on the header cycles Oversampling (1x -> 2x -> 4x -> 8x)
+    // Shift+Click on the header cycles Oversampling (0x native -> 4x -> 8x)
     if (currentSkinStyle == flheat::kSkinProTools)
     {
         if (ptTitleBounds.contains (logicalPos))
         {
             if (event.mods.isShiftDown())
             {
-                const int nextOS = 3;
+                const int nextOS = audioProcessor.getOversamplingMode() == 0 ? 2 : (audioProcessor.getOversamplingMode() == 2 ? 3 : 0);
                 audioProcessor.setOversamplingMode (nextOS);
                 displayedOSMode = nextOS;
             }
@@ -287,7 +289,7 @@ void FLHeatAudioProcessorEditor::mouseDown (const juce::MouseEvent& event)
         {
             if (event.mods.isShiftDown())
             {
-                const int nextOS = 3;
+                const int nextOS = audioProcessor.getOversamplingMode() == 0 ? 2 : (audioProcessor.getOversamplingMode() == 2 ? 3 : 0);
                 audioProcessor.setOversamplingMode (nextOS);
                 displayedOSMode = nextOS;
             }

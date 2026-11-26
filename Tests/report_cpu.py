@@ -6,6 +6,18 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 out=Path(sys.argv[1]); rows=list(csv.DictReader((out/'cpu.csv').open()))
 plt.rcParams.update({'figure.facecolor':'#101820','axes.facecolor':'#121e28','axes.edgecolor':'#35495b','text.color':'#d4e7ee','axes.labelcolor':'#a8c1cf','xtick.color':'#a8c1cf','ytick.color':'#a8c1cf','grid.color':'#2b3e4c','font.family':'DejaVu Sans'})
+if rows and 'oversampling' in rows[0]:
+    fig,axs=plt.subplots(1,2,figsize=(12,5),layout='constrained')
+    for ax,rate in zip(axs,[48000,96000]):
+        data=[r for r in rows if int(r['sample_rate'])==rate]
+        med=np.array([float(r['median_deadline_percent']) for r in data]); p95=np.array([float(r['p95_deadline_percent']) for r in data])
+        ax.bar(range(3),med,color=['#42ed95','#41d2f6','#ffb32d']); ax.errorbar(range(3),med,yerr=[np.zeros(3),p95-med],fmt='none',ecolor='#d4e7ee',capsize=6)
+        for i,y in enumerate(med): ax.text(i,y+1,f'{y:.1f}%',ha='center')
+        ax.set_xticks(range(3)); ax.set_xticklabels(['0x / native','4x','8x']); ax.set_ylim(0,max(65,max(p95)+6)); ax.grid(True,axis='y',alpha=.4); ax.set_title(f'{rate//1000} kHz / 256 samples'); ax.set_ylabel('Single-core audio deadline %')
+    fig.suptitle('CPU 2.1 / median and P95 / stereo / no GUI or DAW')
+    fig.savefig(out/'tone_2.1_cpu.png',dpi=150); plt.close(fig)
+    sys.exit(0)
+
 fig,axs=plt.subplots(1,2,figsize=(14,6),layout='constrained')
 for ax,rate in zip(axs,[48000,96000]):
     xx=np.arange(3)

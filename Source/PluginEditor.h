@@ -79,9 +79,9 @@ public:
 
         juce::String subInfo = "Console: punch 40-60 Hz, subsonico 21 Hz, tolerancias L/R";
         if (v > 0.05)
-            subInfo = "Full Phat & Air: sub controlado + pre/de-enfasis + aire";
+            subInfo = "Weight & Warm: mas peso en graves y agudos suaves; dip sin profundizar";
         else if (v < -0.05)
-            subInfo = "Tight Sub: Controla/recorta el bulto de 27 Hz hacia respuesta plana";
+            subInfo = "Open & Tight: sub controlado, dip 92 Hz hacia plano y agudos abiertos";
 
         return name + " (Sub + Air, Dual Mono): " + valStr
              + " [" + subInfo + "] — Doble clic: 0.0 | Clic derecho: Menu";

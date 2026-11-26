@@ -32,7 +32,7 @@ ax=fig.add_subplot(gs[0,:])
 for i,name in enumerate(names):
     f,h=response(f'new_fr_{i}');ax.plot(f,db(h[:,0]),c=colours[i],lw=1.8,label=name)
 f,h=response('old_fr_0');ax.plot(f,db(h[:,0]),c='#93a6b0',ls='--',lw=1.3,label='Jaycen anterior (4x)')
-for tone,label,c in [(-10,'Jaycen Tone -10 / Tight Sub','#c0e0e8'),(10,'Jaycen Tone +10 / Phat & Air','#ffeb4a')]:
+for tone,label,c in [(-10,'Jaycen Tone -10 / Open & Tight','#c0e0e8'),(10,'Jaycen Tone +10 / Weight & Warm','#ffeb4a')]:
     f,h=response(f'new_tone_{tone}');ax.plot(f,db(h[:,0]),c=c,ls=':',label=label,lw=1.5)
 freqaxis(ax);ax.set_ylim(-10,11);ax.axhline(0,c='#647b8b',lw=.7);ax.legend(ncol=3,fontsize=9,loc='upper right');ax.set_title('RESPUESTA MEDIDA · impulso a -80 dBFS · 8 etapas · L (R tiene tolerancias independientes)',loc='left',color='#54d6f6',weight='bold')
 for i,name in enumerate(names):
@@ -69,7 +69,7 @@ for factor,c in [(0,'#758b9c'),(3,'#ffb32d'),(4,'#42ed95')]:
     metrics[f'alias_{1<<factor}x_folded_harmonics_dbc']=float(db(np.linalg.norm(spec[aliasbins])/spec[11000]))
 a.set_xlim(0,24000);a.set_ylim(-170,5);a.set_title('Aliasing · 11 kHz / -3 dBFS pico · Drive +10, Tone +10');a.set_xlabel('Frecuencia (Hz)');a.set_ylabel('Espectro (dBc)');a.legend();a.grid(True,alpha=.5)
 a=axs[1,0]
-for stem,label,c in [('old_fr_0','Anterior Jaycen (4x)','#71899b'),('new_fr_0','Nuevo Jaycen','#ffb32d'),('new_tone_-10','Nuevo Tight Sub','#41d2f6'),('new_tone_10','Nuevo Phat & Air','#ffe54f')]:
+for stem,label,c in [('old_fr_0','Anterior Jaycen (4x)','#71899b'),('new_fr_0','Nuevo Jaycen','#ffb32d'),('new_tone_-10','Nuevo Open & Tight','#41d2f6'),('new_tone_10','Nuevo Weight & Warm','#ffe54f')]:
     f,h=response(stem);a.plot(f,db(h[:,0]),color=c,label=label)
 a.set_xscale('log');a.set_xlim(5,200);a.set_ylim(-25,10);a.set_xticks([5,10,20,27,40,53,60,92,200]);a.xaxis.set_major_formatter(FuncFormatter(lambda v,p:f'{v:g}'));a.set_title('Headroom subgrave: HP 21–22 Hz + DC 5 Hz');a.set_xlabel('Frecuencia (Hz)');a.set_ylabel('Ganancia (dB)');a.grid(True,alpha=.5);a.legend(fontsize=8)
 a=axs[1,1]

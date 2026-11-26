@@ -363,7 +363,8 @@ namespace jj8nls
             const double tone = std::clamp (rawTone, -10.0, 10.0);
             if (std::abs (tone-lastRawTone) < 1.0e-7) return;
             lastRawTone = tone;
-            subBumpScale = tone < 0.0 ? 1.0+tone/10.0 : 1.0+tone/20.0;
+            // Left: uniform/open; right: weight/warmth. Center retains the v2.0 voicing.
+            subBumpScale = tone < 0.0 ? 1.0+tone/10.0 : 1.0+0.35*tone/10.0;
             if (currentConsoleVariant == 4) subBumpScale *= 0.60;
             updateAllStageFilters();
         }
@@ -638,20 +639,24 @@ namespace jj8nls
 
         void updateGlobalFilters() noexcept
         {
-            const double bright = std::max (0.0, lastRawTone / 10.0);
+            const double t = lastRawTone / 10.0;
+            const double opening = std::max (0.0, -t);
+            const double weight = std::max (0.0, t);
+            // Audible balance is independent of the reciprocal saturation-emphasis pair.
+            const double airDb = 1.25 * opening - 1.75 * weight;
             for (int ch=0; ch<2; ++ch)
             {
                 const double slew = 1.0 - std::exp (-1.0 / (0.010 * sampleRate));
                 for (auto* f : { &subsonic[ch], &outputDC[ch], &preEmphasis[ch], &deEmphasis[ch], &outputAir[ch] }) f->slew = slew;
-                subsonic[ch].setTarget (BiquadSection::makeFirstOrderHighPass (21.0 + std::max (0.0, -lastRawTone / 10.0), sampleRate));
+                subsonic[ch].setTarget (BiquadSection::makeFirstOrderHighPass (21.0, sampleRate));
                 outputDC[ch].setTarget (BiquadSection::makeFirstOrderHighPass (5.0, sampleRate));
-                const auto pre = BiquadSection::makeHighShelf (4500.0, 0.70710678, 4.0 * bright, sampleRate);
+                const auto pre = BiquadSection::makeHighShelf (4500.0, 0.70710678, -2.0 * t, sampleRate);
                 preEmphasis[ch].setTarget (pre);
                 BiquadSection inverse;
                 inverse.b0=1.0/pre.b0; inverse.b1=pre.a1/pre.b0; inverse.b2=pre.a2/pre.b0;
                 inverse.a1=pre.b1/pre.b0; inverse.a2=pre.b2/pre.b0;
                 deEmphasis[ch].setTarget (inverse);
-                outputAir[ch].setTarget (BiquadSection::makeHighShelf (12000.0, 0.70710678, 1.5*bright, sampleRate));
+                outputAir[ch].setTarget (BiquadSection::makeHighShelf (8000.0, 0.70710678, airDb, sampleRate));
             }
         }
 
@@ -675,11 +680,16 @@ namespace jj8nls
                 auto& st = stageStates[ch][index];
                 st.modelAmount.setTargetValue (static_cast<double> (model));
                 const double t = st.tolerance;
+                const double opening = std::max (0.0, -lastRawTone / 10.0);
+                const double weight = std::max (0.0, lastRawTone / 10.0);
+                const double punchScale = 1.0 - 0.35 * opening + 0.20 * weight;
+                const double dipScale = 1.0 - opening;
+                const double rolloffScale = 1.0 - opening;
                 st.filters[0].setTarget (BiquadSection::makePeaking (3200.0*t, 0.65, model == ConsoleModel::Spike ? 0.025 : -0.045, sampleRate));
                 st.filters[1].setTarget (BiquadSection::makePeaking (27.0*t, 1.7, c.bump*0.30*subBumpScale, sampleRate));
-                st.filters[2].setTarget (BiquadSection::makePeaking (52.8*t, 2.0, c.punch, sampleRate));
-                st.filters[3].setTarget (BiquadSection::makePeaking (92.0*t, 1.4, c.dip, sampleRate));
-                st.filters[4].setTarget (BiquadSection::makeHighShelf (c.airHz*t, 0.65, c.air, sampleRate));
+                st.filters[2].setTarget (BiquadSection::makePeaking (52.8*t, 2.0, c.punch*punchScale, sampleRate));
+                st.filters[3].setTarget (BiquadSection::makePeaking (92.0*t, 1.4, c.dip*dipScale, sampleRate));
+                st.filters[4].setTarget (BiquadSection::makeHighShelf (c.airHz*t, 0.65, c.air*rolloffScale, sampleRate));
             }
         }
 
